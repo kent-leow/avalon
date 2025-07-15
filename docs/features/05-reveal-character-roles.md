@@ -127,20 +127,89 @@ Create a role revelation interface that privately displays each player's charact
 
 ### 5. Design Specifications
 
-**Color Analysis:**
+**Modern UI/UX Principles:**
+- **Dramatic Reveal**: Cinematic animation for role disclosure
+- **Privacy-First Design**: Secure, personalized experience for each player
+- **Atmospheric Immersion**: Medieval/fantasy theming with particle effects
+- **Emotional Storytelling**: Character-driven narrative presentation
+- **Contextual Knowledge**: Clear visualization of player relationships
+
+**Color System (Enhanced):**
 | Design Color | Semantic Purpose | Element | Implementation Method |
 |--------------|-----------------|---------|------------------------|
-| #1a1a2e | Primary brand | Screen header | Direct hex value (#1a1a2e) |
-| #16213e | Secondary brand | Role card background | Direct hex value (#16213e) |
-| #0066cc | Interactive | Continue button | Direct hex value (#0066cc) |
-| #4a90e2 | Interactive hover | Button hover state | Direct hex value (#4a90e2) |
-| #ffffff | High contrast text | Role names, descriptions | Direct hex value (#ffffff) |
-| #f8f9fa | Subtle background | Screen background | Direct hex value (#f8f9fa) |
-| #6c757d | Muted text | Player names, hints | Direct hex value (#6c757d) |
-| #28a745 | Success/Good | Good team indicators | Direct hex value (#28a745) |
-| #dc3545 | Error/Evil | Evil team indicators | Direct hex value (#dc3545) |
-| #ffc107 | Warning | Timer warnings | Direct hex value (#ffc107) |
-| #17a2b8 | Info | Knowledge indicators | Direct hex value (#17a2b8) |
+| #0a0a0f | Deep mystical | Main background | bg-[#0a0a0f] with starfield |
+| #1a1a2e | Primary brand | Screen header | bg-[#1a1a2e] with gradient |
+| #252547 | Elevated surface | Role card bg | bg-[#252547] with glass effect |
+| #2d2d5f | Interactive | Knowledge cards | bg-[#2d2d5f] with hover glow |
+| #3d3d7a | Accent primary | Role borders | border-[#3d3d7a] with pulse |
+| #4a4a96 | Accent hover | Card hover states | bg-[#4a4a96] with scale |
+| #ffffff | High contrast | Role names | text-white with text-shadow |
+| #f8fafc | Subtle | Descriptions | text-slate-100 with opacity |
+| #22c55e | Success/Good | Good team glow | text-green-500 with aura |
+| #ef4444 | Error/Evil | Evil team glow | text-red-500 with flame |
+| #f59e0b | Warning | Timer warnings | text-amber-500 with pulse |
+| #3b82f6 | Info | Knowledge hints | text-blue-500 with shimmer |
+| #8b5cf6 | Mystical | Magic effects | text-purple-500 with glow |
+| #ec4899 | Arcane | Special abilities | text-pink-500 with sparkle |
+
+**Animation & Interaction Design:**
+- **Role Reveal Sequence**:
+  - Fade in: Screen fades from black with particles
+  - Card flip: 3D rotation revealing role with magical particles
+  - Glow effect: Team-colored aura surrounding role card
+  - Text typewriter: Role description appears with typing effect
+- **Knowledge Visualization**:
+  - Player cards: Fade in with staggered timing (100ms delays)
+  - Connection lines: Animated lines showing relationships
+  - Pulse indicators: Rhythmic pulsing for known players
+  - Uncertainty effects: Flickering/shimmer for ambiguous knowledge
+- **Magical Effects**:
+  - Particle systems: Floating magical motes throughout screen
+  - Glow animations: Soft pulsing glows around team indicators
+  - Sparkle effects: Twinkling stars for special abilities
+  - Mystic transitions: Ethereal fade/dissolve effects
+
+**Enhanced Visual Hierarchy:**
+```
+RoleRevealScreen (bg-gradient-to-br from-[#0a0a0f] via-[#1a1a2e] to-[#252547])
+├── Particle System (floating magical motes)
+├── Header ("Your Destiny" - text-4xl with mystical glow)
+├── PlayerRoleCard (prominent, centered with 3D flip)
+│   ├── Role Portrait (circular with team aura)
+│   ├── Role Name (text-3xl font-bold with text-shadow)
+│   ├── Team Badge (animated with glow effect)
+│   └── Role Description (typewriter animation)
+├── KnownPlayersGrid (conditional, slide-up)
+│   ├── Section Title ("Your Knowledge")
+│   └── Player Knowledge Cards (staggered fade-in)
+│       ├── Player Avatar (with certainty indicator)
+│       ├── Knowledge Type (icon with tooltip)
+│       └── Confidence Level (progress bar)
+├── RoleRevealTimer (floating countdown with particle trail)
+└── ContinueButton (mystical button with hover glow)
+```
+
+**Typography (Enhanced):**
+- **Screen Title**: `text-4xl font-bold bg-gradient-to-r from-white via-purple-200 to-pink-200`
+- **Role Names**: `text-3xl font-bold tracking-wide text-shadow-lg`
+- **Role Descriptions**: `text-lg leading-relaxed opacity-90`
+- **Player Names**: `text-base font-medium tracking-wide`
+- **Knowledge Labels**: `text-sm font-medium uppercase tracking-widest`
+- **Timer Text**: `text-2xl font-mono font-bold tabular-nums`
+
+**Interactive Elements (Enhanced):**
+- **Role Card**:
+  - Surface: `bg-[#252547]/90 backdrop-blur-xl border-2 border-purple-500/30`
+  - Hover: `transform: scale(1.05) shadow-2xl glow-effect`
+  - Team Aura: `box-shadow: 0 0 40px rgba(team-color, 0.4)`
+- **Knowledge Cards**:
+  - Certain: `border-green-500 bg-green-500/10 glow-green`
+  - Suspected: `border-amber-500 bg-amber-500/10 glow-amber`
+  - Unknown: `border-gray-500 bg-gray-500/10 opacity-60`
+- **Continue Button**:
+  - Default: `bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 to-pink-700`
+  - Hover: `transform: translateY(-2px) scale(1.05) shadow-2xl`
+  - Glow: `box-shadow: 0 0 20px rgba(139, 92, 246, 0.5)`
 
 **Spacing Values:**
 - Screen padding: 24px (p-6)

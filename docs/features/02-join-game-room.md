@@ -114,19 +114,75 @@ Create a room joining feature that allows players to join existing Avalon game r
 
 ### 5. Design Specifications
 
-**Color Analysis:**
+**Modern UI/UX Principles:**
+- **Card-based Design**: Elevated surfaces with glassmorphism effects
+- **Progressive Enhancement**: Smooth transitions and micro-interactions
+- **Gestalt Principles**: Proximity, similarity, and closure in UI elements
+- **Emotional Design**: Delight moments through subtle animations
+- **Accessibility First**: Inclusive design with proper contrast and focus management
+
+**Color System (Enhanced):**
 | Design Color | Semantic Purpose | Element | Implementation Method |
 |--------------|-----------------|---------|------------------------|
-| #1a1a2e | Primary brand | Header background | Direct hex value (#1a1a2e) |
-| #16213e | Secondary brand | Card background | Direct hex value (#16213e) |
-| #0066cc | Interactive | Join button background | Direct hex value (#0066cc) |
-| #4a90e2 | Interactive hover | Button hover state | Direct hex value (#4a90e2) |
-| #ffffff | High contrast text | Button text, labels | Direct hex value (#ffffff) |
-| #f8f9fa | Subtle background | Input background | Direct hex value (#f8f9fa) |
-| #6c757d | Muted text | Helper text | Direct hex value (#6c757d) |
-| #28a745 | Success | Success messages | Direct hex value (#28a745) |
-| #dc3545 | Error | Error messages, validation | Direct hex value (#dc3545) |
-| #ffc107 | Warning | Room full warning | Direct hex value (#ffc107) |
+| #0f0f23 | Deep primary | Main background | bg-[#0f0f23] with texture overlay |
+| #1a1a2e | Primary brand | Header, cards | bg-[#1a1a2e] with gradient accent |
+| #252547 | Elevated surface | Form backgrounds | bg-[#252547] with glass blur |
+| #2d2d5f | Interactive | Input backgrounds | bg-[#2d2d5f] with focus glow |
+| #3d3d7a | Primary CTA | Join button | bg-[#3d3d7a] with hover transform |
+| #4a4a96 | Secondary | Hover states | bg-[#4a4a96] with scale effect |
+| #ffffff | High contrast | Text, labels | text-white with proper hierarchy |
+| #f8fafc | Subtle | Helper text | text-slate-100 with opacity |
+| #22c55e | Success | Join success | text-green-500 with pulse |
+| #ef4444 | Error | Validation errors | text-red-500 with shake |
+| #f59e0b | Warning | Room full | text-amber-500 with bounce |
+| #3b82f6 | Info | Loading states | text-blue-500 with spin |
+
+**Animation & Interaction Design:**
+- **Form Animations**:
+  - Input focus: Border glow with `box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3)`
+  - Label float: Smooth transition from placeholder to floating label
+  - Error shake: `keyframes: shake { 0%, 100% { transform: translateX(0) } 50% { transform: translateX(-10px) } }`
+  - Success pulse: `keyframes: pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.8 } }`
+- **Button Interactions**:
+  - Hover: `transform: translateY(-2px) scale(1.02)` with `shadow-lg → shadow-xl`
+  - Active: `transform: translateY(0) scale(0.98)` with `shadow-inner`
+  - Loading: Spinner with fade-in/fade-out states
+- **Status Indicators**:
+  - Success: Checkmark with scale-up animation
+  - Error: X-mark with shake animation
+  - Loading: Pulsing dots with staggered timing
+
+**Enhanced Visual Hierarchy:**
+```
+JoinRoomPage (bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547])
+├── Header (text-4xl font-bold with gradient text)
+├── JoinRoomForm (glass-card with backdrop-blur-xl)
+│   ├── Room Code Input (floating-label with glow-on-focus)
+│   ├── Player Name Input (validation with smooth transitions)
+│   ├── Join Button (gradient-button with hover-lift)
+│   └── RoomJoinStatus (slide-up with status-specific animations)
+└── Instructions (fade-in with delayed timing)
+```
+
+**Typography (Enhanced):**
+- **Primary Headings**: `text-4xl font-bold bg-gradient-to-r from-white to-slate-200`
+- **Form Labels**: `text-sm font-medium tracking-wide uppercase opacity-90`
+- **Input Text**: `text-lg font-normal leading-relaxed`
+- **Helper Text**: `text-sm opacity-75 leading-normal`
+- **Error Messages**: `text-sm font-medium text-red-400`
+- **Button Text**: `text-base font-semibold tracking-wide`
+
+**Interactive Elements (Enhanced):**
+- **Input Fields**: 
+  - Default: `border-2 border-slate-600 focus:border-blue-500`
+  - Focus: `ring-4 ring-blue-500/30 transform: scale(1.02)`
+  - Error: `border-red-500 ring-4 ring-red-500/30`
+- **Buttons**:
+  - Primary: `bg-gradient-to-r from-[#3d3d7a] to-[#4a4a96] hover:from-[#4a4a96] to-[#5a5ab2]`
+  - Disabled: `opacity-50 cursor-not-allowed filter: grayscale(1)`
+- **Cards**:
+  - Surface: `bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30`
+  - Hover: `transform: translateY(-4px) shadow-2xl`
 
 **Spacing Values:**
 - Card padding: 24px (p-6)

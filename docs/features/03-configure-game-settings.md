@@ -146,20 +146,83 @@ Create a game settings configuration interface that allows hosts to customize ch
 
 ### 5. Design Specifications
 
-**Color Analysis:**
+**Modern UI/UX Principles:**
+- **Interactive Card System**: Character cards with hover states and selection feedback
+- **Progressive Disclosure**: Settings revealed based on user selections
+- **Visual Feedback**: Immediate response to user interactions
+- **Gamification Elements**: Achievement-style indicators for valid configurations
+- **Contextual Help**: Tooltips and inline guidance for complex rules
+
+**Color System (Enhanced):**
 | Design Color | Semantic Purpose | Element | Implementation Method |
 |--------------|-----------------|---------|------------------------|
-| #1a1a2e | Primary brand | Panel header | Direct hex value (#1a1a2e) |
-| #16213e | Secondary brand | Character card background | Direct hex value (#16213e) |
-| #0066cc | Interactive | Selected character border | Direct hex value (#0066cc) |
-| #4a90e2 | Interactive hover | Character card hover | Direct hex value (#4a90e2) |
-| #ffffff | High contrast text | Character names, labels | Direct hex value (#ffffff) |
-| #f8f9fa | Subtle background | Panel background | Direct hex value (#f8f9fa) |
-| #6c757d | Muted text | Character descriptions | Direct hex value (#6c757d) |
-| #28a745 | Success | Valid configuration | Direct hex value (#28a745) |
-| #dc3545 | Error | Validation errors | Direct hex value (#dc3545) |
-| #ffc107 | Warning | Configuration warnings | Direct hex value (#ffc107) |
-| #17a2b8 | Info | Character effects | Direct hex value (#17a2b8) |
+| #0f0f23 | Deep primary | Main background | bg-[#0f0f23] with subtle pattern |
+| #1a1a2e | Primary brand | Panel headers | bg-[#1a1a2e] with gradient overlay |
+| #252547 | Elevated surface | Character cards | bg-[#252547] with glass effect |
+| #2d2d5f | Interactive | Card hover states | bg-[#2d2d5f] with glow transition |
+| #3d3d7a | Selection | Selected card borders | border-[#3d3d7a] with pulse |
+| #4a4a96 | Selection hover | Active selections | bg-[#4a4a96] with scale effect |
+| #ffffff | High contrast | Character names | text-white with shadow |
+| #f8fafc | Subtle | Descriptions | text-slate-100 with opacity |
+| #22c55e | Success/Good | Good team indicators | text-green-500 with glow |
+| #ef4444 | Error/Evil | Evil team indicators | text-red-500 with pulse |
+| #f59e0b | Warning | Config warnings | text-amber-500 with bounce |
+| #3b82f6 | Info | Character abilities | text-blue-500 with fade |
+
+**Animation & Interaction Design:**
+- **Character Card Animations**:
+  - Hover: `transform: translateY(-8px) scale(1.05)` with `shadow-2xl`
+  - Selection: `ring-4 ring-blue-500/50` with `transform: scale(1.02)`
+  - Team indicator: Pulsing glow effect for team affiliation
+  - Flip animation: 3D card flip on selection with backface-visibility
+- **Grid Animations**:
+  - Staggered entry: Cards animate in with 100ms delays
+  - Masonry layout: Smooth repositioning on selection changes
+  - Filtering: Smooth fade-in/fade-out transitions
+- **Validation Feedback**:
+  - Success: Green checkmark with bounce keyframe
+  - Error: Red X with shake animation
+  - Warning: Amber triangle with pulse effect
+
+**Enhanced Visual Hierarchy:**
+```
+GameSettingsPanel (bg-gradient-to-br from-[#0f0f23] to-[#1a1a2e])
+├── Header (text-3xl font-bold with gradient text)
+├── CharacterSelector (grid with staggered animations)
+│   └── CharacterCard[] (interactive with hover-lift)
+│       ├── Team Badge (floating with glow effect)
+│       ├── Character Portrait (with selection overlay)
+│       ├── Name (text-xl font-bold)
+│       └── Ability (text-sm with fade-in)
+├── SettingsSummary (glass-panel with slide-up)
+│   ├── Player Requirements (progress-bar style)
+│   ├── Team Balance (visual indicator)
+│   └── Configuration Status (status-badge)
+└── ValidationErrors (slide-down with error-specific icons)
+```
+
+**Typography (Enhanced):**
+- **Panel Titles**: `text-3xl font-bold bg-gradient-to-r from-white to-slate-200`
+- **Character Names**: `text-xl font-bold tracking-wide`
+- **Descriptions**: `text-sm leading-relaxed opacity-90`
+- **Team Indicators**: `text-xs font-bold uppercase tracking-widest`
+- **Error Messages**: `text-sm font-medium text-red-400`
+- **Success Messages**: `text-sm font-medium text-green-400`
+
+**Interactive Elements (Enhanced):**
+- **Character Cards**:
+  - Default: `bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30`
+  - Hover: `transform: translateY(-8px) scale(1.05) shadow-2xl`
+  - Selected: `ring-4 ring-blue-500/50 bg-[#3d3d7a]/50`
+  - Team Glow: `box-shadow: 0 0 20px rgba(color, 0.3)`
+- **Grid Layout**:
+  - Responsive: `grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4`
+  - Gap: `gap-6 md:gap-8` with smooth transitions
+  - Masonry: CSS Grid with `grid-template-rows: masonry`
+- **Validation States**:
+  - Success: `border-green-500 bg-green-500/10`
+  - Error: `border-red-500 bg-red-500/10`
+  - Warning: `border-amber-500 bg-amber-500/10`
 
 **Spacing Values:**
 - Panel padding: 24px (p-6)

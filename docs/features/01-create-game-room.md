@@ -101,48 +101,93 @@ Create a game room creation feature that allows hosts to generate unique Avalon 
 
 ### 5. Design Specifications
 
-**Color Analysis:**
+**Modern UI/UX Principles:**
+- **Glassmorphism**: Semi-transparent cards with backdrop blur effects
+- **Smooth Animations**: Micro-interactions with 300ms easing transitions
+- **Depth & Shadow**: Layered depth using shadow-xl and shadow-2xl
+- **Gradient Accents**: Subtle gradients for interactive elements
+- **Progressive Disclosure**: Information revealed progressively to reduce cognitive load
+- **Haptic Feedback**: Visual feedback mimicking tactile interactions
+
+**Color System (Enhanced):**
 | Design Color | Semantic Purpose | Element | Implementation Method |
 |--------------|-----------------|---------|------------------------|
-| #1a1a2e | Primary brand | Header background | Direct hex value (#1a1a2e) |
-| #16213e | Secondary brand | Card background | Direct hex value (#16213e) |
-| #0066cc | Interactive | Button background | Direct hex value (#0066cc) |
-| #4a90e2 | Interactive hover | Button hover state | Direct hex value (#4a90e2) |
-| #ffffff | High contrast text | Button text, labels | Direct hex value (#ffffff) |
-| #f8f9fa | Subtle background | Input background | Direct hex value (#f8f9fa) |
-| #28a745 | Success | Success messages | Direct hex value (#28a745) |
-| #dc3545 | Error | Error messages | Direct hex value (#dc3545) |
+| #0f0f23 | Deep primary | Main background | bg-[#0f0f23] with grain texture |
+| #1a1a2e | Primary brand | Header, navigation | bg-[#1a1a2e] with subtle gradient |
+| #252547 | Elevated surface | Card backgrounds | bg-[#252547] with glass effect |
+| #2d2d5f | Interactive surface | Button backgrounds | bg-[#2d2d5f] with hover transform |
+| #3d3d7a | Accent primary | CTAs, highlights | bg-[#3d3d7a] with glow effect |
+| #4a4a96 | Accent secondary | Hover states | bg-[#4a4a96] with scale transform |
+| #ffffff | High contrast | Text, icons | text-white with proper contrast |
+| #f8fafc | Subtle contrast | Secondary text | text-slate-100 |
+| #22c55e | Success | Success states | text-green-500 with pulse animation |
+| #ef4444 | Error | Error states | text-red-500 with shake animation |
+| #f59e0b | Warning | Warning states | text-amber-500 with bounce |
+| #3b82f6 | Info | Info states | text-blue-500 with fade-in |
 
-**Spacing Values:**
-- Card padding: 24px (p-6)
-- Button padding: 12px 24px (px-6 py-3)
-- Input padding: 12px 16px (px-4 py-3)
-- Gap between elements: 16px (gap-4)
-- Margin between sections: 32px (mb-8)
+**Animation & Interaction Design:**
+- **Micro-animations**: 
+  - Button hover: `transform: scale(1.05)` with `transition: all 300ms ease-out`
+  - Card appearance: `opacity: 0 → 1` with `transform: translateY(20px) → translateY(0)`
+  - QR code generation: Spinning loader with fade-in reveal
+  - Copy button: Success checkmark animation with 2s auto-hide
+- **Loading States**:
+  - Skeleton loading for room creation process
+  - Progress indicator for QR code generation
+  - Shimmer effect for pending states
+- **Feedback Animations**:
+  - Success: Green checkmark with bounce keyframe
+  - Error: Red shake animation with haptic-like feedback
+  - Copy success: Ripple effect from button center
 
-**Visual Hierarchy:**
+**Spacing & Layout (Enhanced):**
+- **Responsive Grid**: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` with proper gaps
+- **Card Layout**: `p-8 rounded-2xl` with `shadow-xl backdrop-blur-lg`
+- **Button Layout**: `px-8 py-4 rounded-xl` with `shadow-lg hover:shadow-xl`
+- **Dynamic Spacing**: `space-y-6 md:space-y-8 lg:space-y-10` for vertical rhythm
+- **Container Constraints**: `max-w-md mx-auto` with `min-h-screen` for proper centering
+
+**Visual Hierarchy (Enhanced):**
 ```
-CreateRoomPage
-├── Header (h1, text-3xl font-bold)
-├── CreateRoomForm (max-w-md mx-auto)
-│   ├── Description (p, text-lg)
-│   └── Create Button (btn-primary)
-└── RoomCodeDisplay (conditional, card layout)
-    ├── Room Code (text-2xl font-mono)
-    ├── Join URL (text-sm, copyable)
-    └── QR Code (256x256px)
+CreateRoomPage (bg-gradient-to-br from-[#0f0f23] to-[#1a1a2e])
+├── Header (text-4xl font-bold bg-gradient-to-r from-white to-slate-200)
+├── CreateRoomForm (glass-card with backdrop-blur-xl)
+│   ├── Description (text-lg opacity-90 leading-relaxed)
+│   └── Create Button (gradient-button with hover:scale-105)
+└── RoomCodeDisplay (slide-up animation, glass-card)
+    ├── Room Code (text-3xl font-mono tracking-wider)
+    ├── Join URL (copy-button with success-animation)
+    └── QR Code (fade-in with scale-up from 0.8 to 1)
 ```
 
-**Typography:**
-- Page title: 30px, font-bold, line-height: 1.2
-- Description: 18px, font-normal, line-height: 1.5
-- Room code: 24px, font-mono, font-semibold
-- URL text: 14px, font-normal, line-height: 1.4
+**Typography (Enhanced):**
+- **Font Stack**: `font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif`
+- **Heading Scale**: `text-4xl (36px) → text-3xl (30px) → text-2xl (24px)` with proper line-height
+- **Body Text**: `text-lg (18px)` with `leading-relaxed (1.625)`
+- **Monospace**: `font-mono` for room codes with `tracking-wider` letter-spacing
+- **Font Weights**: `font-bold` for headings, `font-semibold` for buttons, `font-medium` for labels
 
-**Responsive Behavior:**
-- Mobile (375px): Single column, QR code 200px
-- Tablet (768px): Single column, QR code 256px
-- Desktop (1280px): Centered layout, QR code 256px
+**Interactive Elements:**
+- **Hover States**: `hover:scale-105 hover:shadow-xl transition-all duration-300`
+- **Focus States**: `focus:ring-4 focus:ring-blue-500/30 focus:outline-none`
+- **Active States**: `active:scale-95 active:shadow-inner`
+- **Disabled States**: `disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`
+
+**Responsive Behavior (Enhanced):**
+- **Mobile First (320px+)**: Single column, touch-optimized buttons (48px min-height)
+- **Small Mobile (375px+)**: QR code 200px, improved spacing
+- **Large Mobile (425px+)**: Enhanced card padding, larger touch targets
+- **Tablet (768px+)**: Two-column layout, QR code 256px, hover states enabled
+- **Desktop (1024px+)**: Three-column layout, enhanced animations, larger QR code
+- **Large Desktop (1440px+)**: Spacious layout, full animation suite, optimal UX
+
+**Accessibility (Enhanced):**
+- **ARIA Labels**: Comprehensive screen reader support with live regions
+- **Keyboard Navigation**: Full keyboard support with visible focus indicators
+- **Color Contrast**: WCAG AA compliance with 4.5:1 minimum contrast ratio
+- **Motion Preferences**: `prefers-reduced-motion` support with alternate animations
+- **Touch Targets**: Minimum 44px touch target size on mobile
+- **High Contrast Mode**: Support for system high contrast preferences
 
 ### 6. Data Flow & State Management
 
