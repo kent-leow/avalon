@@ -1281,4 +1281,240 @@ export const roomRouter = createTRPCRouter({
         isRevealing: !!gameState.votingResult,
       };
     }),
+
+  /**
+   * Submit mission vote
+   */
+  submitMissionVote: publicProcedure
+    .input(z.object({
+      roomId: z.string(),
+      playerId: z.string(),
+      vote: z.enum(['success', 'failure']),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { roomId, playerId, vote } = input;
+      
+      // Get room and validate
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Validate player is in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found");
+      }
+      
+      const gameState = room.gameState as unknown as GameState & {
+        selectedTeam?: string[];
+        missionVotes?: { playerId: string; vote: 'success' | 'failure'; timestamp: Date }[];
+        missionResult?: { outcome: 'success' | 'failure'; votes: { success: number; failure: number }; };
+        missionOutcomes?: ('success' | 'failure')[];
+        currentMission?: number;
+        assignedRoles?: Record<string, string>;
+      };
+      
+      // Validate game is in mission execution phase
+      if (room.phase !== 'mission-execution') {
+        throw new Error("Room is not in mission execution phase");
+      }
+      
+      // Validate player is on the selected team
+      const selectedTeam = gameState.selectedTeam || [];
+      if (!selectedTeam.includes(playerId)) {
+        throw new Error("You are not on the selected team");
+      }
+      
+      // Validate role constraints (good players can't vote for failure)
+      const playerRole = gameState.assignedRoles?.[playerId] as string;
+      if (playerRole && !['mordred', 'assassin', 'morgana', 'oberon'].includes(playerRole) && vote === 'failure') {
+        throw new Error("Good players cannot vote for mission failure");
+      }
+      
+      // Get existing mission votes
+      const missionVotes = gameState.missionVotes || [];
+      
+      // Check if player has already voted
+      const existingVote = missionVotes.find(v => v.playerId === playerId);
+      if (existingVote) {
+        throw new Error("You have already voted on this mission");
+      }
+      
+      // Add new vote
+      const newVote = {
+        playerId,
+        vote,
+        timestamp: new Date(),
+      };
+      
+      const updatedMissionVotes = [...missionVotes, newVote];
+      
+      // Check if all team members have voted
+      const allVoted = selectedTeam.every(teamMemberId => 
+        updatedMissionVotes.some(v => v.playerId === teamMemberId)
+      );
+      
+      let missionResult = null;
+      let nextPhase = room.phase;
+      
+      if (allVoted) {
+        // Calculate mission result
+        const successVotes = updatedMissionVotes.filter(v => v.vote === 'success').length;
+        const failureVotes = updatedMissionVotes.filter(v => v.vote === 'failure').length;
+        
+        // Determine failure requirement (Mission 4 with 7+ players needs 2 fails)
+        const currentMission = gameState.currentMission || 1;
+        const failVotesRequired = currentMission === 4 && room.players.length >= 7 ? 2 : 1;
+        
+        const outcome = failureVotes >= failVotesRequired ? 'failure' : 'success';
+        
+        missionResult = {
+          outcome,
+          votes: {
+            success: successVotes,
+            failure: failureVotes,
+          },
+          failVotesRequired,
+        };
+        
+        // Update mission outcomes array
+        const missionOutcomes = gameState.missionOutcomes || [];
+        const updatedOutcomes = [...missionOutcomes];
+        
+        if (updatedOutcomes.length === (currentMission - 1)) {
+          updatedOutcomes.push(outcome);
+        } else {
+          updatedOutcomes[currentMission - 1] = outcome;
+        }
+        
+        // Check if game is over
+        const goodWins = updatedOutcomes.filter(o => o === 'success').length;
+        const evilWins = updatedOutcomes.filter(o => o === 'failure').length;
+        
+        if (goodWins >= 3) {
+          nextPhase = 'assassin-attempt';
+        } else if (evilWins >= 3) {
+          nextPhase = 'game-over';
+        } else {
+          nextPhase = 'mission-selection';
+        }
+      }
+      
+      // Update room
+      const updatedGameState = {
+        ...gameState,
+        missionVotes: updatedMissionVotes,
+        missionResult,
+        missionOutcomes: missionResult ? (gameState.missionOutcomes || []).concat(missionResult.outcome as 'success' | 'failure') : gameState.missionOutcomes,
+        lastUpdated: new Date(),
+      };
+      
+      await ctx.db.room.update({
+        where: { id: roomId },
+        data: {
+          gameState: JSON.parse(JSON.stringify(updatedGameState)),
+          phase: nextPhase,
+        },
+      });
+      
+      return {
+        success: true,
+        vote: newVote,
+        allVoted,
+        result: missionResult,
+        nextPhase,
+      };
+    }),
+
+  /**
+   * Get mission execution state
+   */
+  getMissionExecutionState: publicProcedure
+    .input(z.object({
+      roomId: z.string(),
+      playerId: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      const { roomId, playerId } = input;
+      
+      // Get room and validate
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Validate player is in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found");
+      }
+      
+      const gameState = room.gameState as unknown as GameState & {
+        selectedTeam?: string[];
+        missionVotes?: { playerId: string; vote: 'success' | 'failure'; timestamp: Date }[];
+        missionResult?: { outcome: 'success' | 'failure'; votes: { success: number; failure: number }; };
+        missionOutcomes?: ('success' | 'failure')[];
+        currentMission?: number;
+        assignedRoles?: Record<string, string>;
+      };
+      
+      const currentMission = gameState.currentMission || 1;
+      const selectedTeam = gameState.selectedTeam || [];
+      const missionVotes = gameState.missionVotes || [];
+      const missionOutcomes = gameState.missionOutcomes || [];
+      
+      // Calculate wins
+      const goodWins = missionOutcomes.filter(o => o === 'success').length;
+      const evilWins = missionOutcomes.filter(o => o === 'failure').length;
+      
+      // Get player role
+      const playerRole = gameState.assignedRoles?.[playerId] as string;
+      const isEvilRole = playerRole && ['mordred', 'assassin', 'morgana', 'oberon'].includes(playerRole);
+      
+      // Check if player has voted
+      const hasVoted = missionVotes.some(v => v.playerId === playerId);
+      const canVote = selectedTeam.includes(playerId) && !hasVoted && !gameState.missionResult;
+      
+      // Get team members with voting status
+      const teamMembers = selectedTeam.map(teamPlayerId => {
+        const teamPlayer = room.players.find(p => p.id === teamPlayerId);
+        return {
+          playerId: teamPlayerId,
+          playerName: teamPlayer?.name || 'Unknown',
+          hasVoted: missionVotes.some(v => v.playerId === teamPlayerId),
+          isCurrentPlayer: teamPlayerId === playerId,
+        };
+      });
+      
+      // Calculate voting progress
+      const votingProgress = {
+        votesSubmitted: missionVotes.length,
+        totalVotes: selectedTeam.length,
+        percentageComplete: Math.round((missionVotes.length / selectedTeam.length) * 100),
+        isComplete: missionVotes.length >= selectedTeam.length,
+      };
+      
+      return {
+        missionNumber: currentMission,
+        canVote,
+        hasVoted,
+        isWaiting: hasVoted && !gameState.missionResult,
+        showResults: !!gameState.missionResult,
+        playerRole: isEvilRole ? 'evil' : 'good',
+        teamMembers,
+        votingProgress,
+        missionResult: gameState.missionResult,
+        gameWins: { good: goodWins, evil: evilWins },
+        playerCount: room.players.length,
+      };
+    }),
 });
