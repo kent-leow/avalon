@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { RoomCodeDisplay } from './RoomCodeDisplay';
-import { createRoomCode, generateJoinUrl } from '~/lib/room-code-generator';
+import { generateJoinUrl } from '~/lib/room-code-generator';
+import { createSession } from '~/lib/session';
+import { api } from '~/trpc/react';
 import { type Room } from '~/types/room';
 
 interface CreateRoomFormProps {
@@ -12,39 +14,35 @@ interface CreateRoomFormProps {
 
 export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomFormProps) {
   const [hostName, setHostName] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const [createdRoom, setCreatedRoom] = useState<Room | null>(null);
+  const [createdRoom, setCreatedRoom] = useState<{
+    id: string;
+    code: string;
+    joinUrl: string;
+    hostId: string;
+    expiresAt: Date;
+    sessionId: string;
+  } | null>(null);
   const [error, setError] = useState<string>('');
 
-  const handleCreateRoom = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!hostName.trim()) {
-      setError('Please enter your name');
-      return;
-    }
-
-    setIsCreating(true);
-    setError('');
-
-    try {
-      // Mock room creation for now
-      const roomCode = createRoomCode();
-      const joinUrl = generateJoinUrl(roomCode);
+  const createRoomMutation = api.room.createRoom.useMutation({
+    onSuccess: (data) => {
+      setCreatedRoom(data);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create session for the host
+      createSession(hostName, data.id);
       
-      const mockRoom: Room = {
-        id: crypto.randomUUID(),
-        code: roomCode,
-        hostId: crypto.randomUUID(),
+      // Create a Room object for the callback
+      const room: Room = {
+        id: data.id,
+        code: data.code,
+        hostId: data.hostId,
         players: [{
-          id: crypto.randomUUID(),
+          id: data.hostId,
           name: hostName,
           isHost: true,
           joinedAt: new Date(),
-          roomId: roomCode,
+          roomId: data.id,
+          sessionId: data.sessionId,
         }],
         gameState: {
           phase: 'lobby',
@@ -54,31 +52,43 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
           missions: []
         },
         settings: {
-          characters: ['merlin', 'assassin', 'loyal', 'loyal', 'minion'],
+          characters: [],
           playerCount: 5,
           allowSpectators: false,
           autoStart: false
         },
         createdAt: new Date(),
         updatedAt: new Date(),
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+        expiresAt: data.expiresAt
       };
-
-      setCreatedRoom(mockRoom);
-      onRoomCreated(mockRoom);
-    } catch (err) {
-      console.error('Error creating room:', err);
-      setError('Failed to create room. Please try again.');
-    } finally {
-      setIsCreating(false);
+      
+      onRoomCreated(room);
+    },
+    onError: (error) => {
+      console.error('Error creating room:', error);
+      setError(error.message || 'Failed to create room. Please try again.');
     }
+  });
+
+  const handleCreateRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!hostName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    setError('');
+    createRoomMutation.mutate({
+      hostName: hostName.trim(),
+    });
   };
 
   if (createdRoom) {
     return (
       <RoomCodeDisplay
         roomCode={createdRoom.code}
-        joinUrl={generateJoinUrl(createdRoom.code)}
+        joinUrl={createdRoom.joinUrl}
         className={className}
       />
     );
@@ -108,7 +118,7 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
               onChange={(e) => setHostName(e.target.value)}
               placeholder="Enter your name"
               className="w-full px-4 py-3 bg-[#1a1a2e] border border-slate-600/30 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300"
-              disabled={isCreating}
+              disabled={createRoomMutation.isPending}
               maxLength={50}
               required
             />
@@ -122,10 +132,10 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
 
           <button
             type="submit"
-            disabled={isCreating || !hostName.trim()}
+            disabled={createRoomMutation.isPending || !hostName.trim()}
             className="w-full bg-gradient-to-r from-[#3d3d7a] to-[#4a4a96] hover:from-[#4a4a96] hover:to-[#5a5ab2] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {isCreating ? (
+            {createRoomMutation.isPending ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 <span>Creating Room...</span>

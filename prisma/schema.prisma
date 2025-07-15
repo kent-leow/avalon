@@ -18,3 +18,34 @@ model Post {
 
     @@index([name])
 }
+
+model Room {
+    id          String   @id @default(cuid())
+    code        String   @unique
+    hostId      String
+    gameState   Json
+    settings    Json
+    maxPlayers  Int      @default(10)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    expiresAt   DateTime
+    players     Player[]
+    
+    @@index([code])
+    @@index([expiresAt])
+    @@index([hostId])
+}
+
+model Player {
+    id        String   @id @default(cuid())
+    name      String
+    isHost    Boolean  @default(false)
+    role      String?
+    joinedAt  DateTime @default(now())
+    sessionId String?  @unique
+    roomId    String
+    room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+    
+    @@index([roomId])
+    @@index([sessionId])
+}

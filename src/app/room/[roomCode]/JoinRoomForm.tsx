@@ -5,6 +5,7 @@ import { PlayerNameInput } from './PlayerNameInput';
 import { RoomJoinStatus } from './RoomJoinStatus';
 import { validateRoomCode } from '~/lib/room-code-generator';
 import { createSession, getSession } from '~/lib/session';
+import { api } from '~/trpc/react';
 import { type Room, type Player } from '~/types/room';
 
 interface JoinRoomFormProps {
@@ -22,10 +23,61 @@ export function JoinRoomForm({
 }: JoinRoomFormProps) {
   const [enteredRoomCode, setEnteredRoomCode] = useState(roomCode);
   const [playerName, setPlayerName] = useState('');
-  const [isJoining, setIsJoining] = useState(false);
   const [joinStatus, setJoinStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string>('');
   const [roomInfo, setRoomInfo] = useState<Partial<Room> | undefined>();
+
+  const joinRoomMutation = api.room.joinRoom.useMutation({
+    onSuccess: (data) => {
+      setJoinStatus('success');
+      setRoomInfo(data.room);
+      
+      // Create/update session
+      const session = getSession();
+      if (session) {
+        createSession(playerName, data.room.id);
+      }
+      
+      // Create Room and Player objects for the callback
+      const room: Room = {
+        id: data.room.id,
+        code: data.room.code,
+        hostId: '', // Will be populated from room info
+        players: [], // Will be populated from room info
+        gameState: data.room.gameState,
+        settings: {
+          characters: [],
+          playerCount: data.room.playerCount,
+          allowSpectators: false,
+          autoStart: false
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+      };
+
+      const player: Player = {
+        id: data.player.id,
+        name: data.player.name,
+        isHost: data.player.isHost,
+        joinedAt: new Date(),
+        roomId: data.room.id,
+        sessionId: data.player.sessionId,
+      };
+
+      // Simulate delay before navigation
+      setTimeout(() => {
+        onJoinSuccess(room, player);
+      }, 1000);
+    },
+    onError: (error) => {
+      console.error('Error joining room:', error);
+      const errorMessage = error.message || 'Failed to join room. Please try again.';
+      setError(errorMessage);
+      setJoinStatus('error');
+      onJoinError(errorMessage);
+    }
+  });
 
   const handleJoinRoom = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,79 +99,18 @@ export function JoinRoomForm({
       return;
     }
 
-    setIsJoining(true);
     setJoinStatus('loading');
     setError('');
 
-    try {
-      // Get or create session
-      let session = getSession();
-      if (!session) {
-        session = createSession(playerName, codeToUse);
-      }
+    // Get existing session ID if available
+    const session = getSession();
+    const sessionId = session?.id;
 
-      // Mock room joining for now
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Mock successful join
-      const mockRoom: Room = {
-        id: crypto.randomUUID(),
-        code: codeToUse,
-        hostId: crypto.randomUUID(),
-        players: [
-          {
-            id: crypto.randomUUID(),
-            name: 'Host Player',
-            isHost: true,
-            joinedAt: new Date(Date.now() - 5000),
-            roomId: codeToUse,
-          },
-          {
-            id: session.id,
-            name: playerName,
-            isHost: false,
-            joinedAt: new Date(),
-            roomId: codeToUse,
-            sessionId: session.id,
-          }
-        ],
-        gameState: {
-          phase: 'lobby',
-          round: 0,
-          leaderIndex: 0,
-          votes: [],
-          missions: []
-        },
-        settings: {
-          characters: ['merlin', 'assassin', 'loyal', 'loyal', 'minion'],
-          playerCount: 5,
-          allowSpectators: false,
-          autoStart: false
-        },
-        createdAt: new Date(Date.now() - 60000),
-        updatedAt: new Date(),
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-      };
-
-      const player = mockRoom.players.find(p => p.sessionId === session.id)!;
-
-      setRoomInfo(mockRoom);
-      setJoinStatus('success');
-      
-      // Simulate delay before navigation
-      setTimeout(() => {
-        onJoinSuccess(mockRoom, player);
-      }, 1000);
-
-    } catch (err) {
-      console.error('Error joining room:', err);
-      const errorMessage = 'Failed to join room. Please check the room code and try again.';
-      setError(errorMessage);
-      setJoinStatus('error');
-      onJoinError(errorMessage);
-    } finally {
-      setIsJoining(false);
-    }
+    joinRoomMutation.mutate({
+      roomCode: codeToUse,
+      playerName: playerName.trim(),
+      sessionId,
+    });
   };
 
   return (
@@ -149,7 +140,7 @@ export function JoinRoomForm({
                   onChange={(e) => setEnteredRoomCode(e.target.value.toUpperCase())}
                   placeholder="Enter room code"
                   className="w-full px-4 py-3 bg-[#1a1a2e] border border-slate-600/30 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 font-mono text-lg tracking-wider"
-                  disabled={isJoining}
+                  disabled={joinRoomMutation.isPending}
                   maxLength={8}
                   required
                 />
@@ -161,7 +152,7 @@ export function JoinRoomForm({
               value={playerName}
               onChange={setPlayerName}
               error={error && error.includes('name') ? error : ''}
-              disabled={isJoining}
+              disabled={joinRoomMutation.isPending}
             />
 
             {/* General Error */}
@@ -173,10 +164,10 @@ export function JoinRoomForm({
 
             <button
               type="submit"
-              disabled={isJoining || !playerName.trim() || (!enteredRoomCode && !roomCode)}
+              disabled={joinRoomMutation.isPending || !playerName.trim() || (!enteredRoomCode && !roomCode)}
               className="w-full bg-gradient-to-r from-[#3d3d7a] to-[#4a4a96] hover:from-[#4a4a96] hover:to-[#5a5ab2] text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {isJoining ? (
+              {joinRoomMutation.isPending ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   <span>Joining...</span>

@@ -18,3 +18,6 @@ applyTo: '**'
 - Review and test each task before marking as complete.
 - Ensure all acceptance criteria for the parent user story are met.
 - Document any deviations or changes from the original plan.
+
+## Implementation Details
+- Note down in /docs/progress to note down what has been completed, so you can continue from there.

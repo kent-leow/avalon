@@ -6,6 +6,7 @@ import { SettingsSummary } from './SettingsSummary';
 import { ValidationErrors } from './ValidationErrors';
 import { validateCharacterConfiguration, isValidConfiguration } from '~/lib/character-validation';
 import { getDefaultSettings } from '~/lib/default-settings';
+import { api } from '~/trpc/react';
 import { type GameSettings } from '~/types/game-settings';
 import { type ValidationError } from '~/types/characters';
 
@@ -29,6 +30,7 @@ export function GameSettingsPanel({
   const [settings, setSettings] = useState<GameSettings>(currentSettings);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [isValid, setIsValid] = useState(false);
+  const [lastSavedSettings, setLastSavedSettings] = useState<GameSettings>(currentSettings);
 
   // Update validation when settings change
   useEffect(() => {
@@ -43,6 +45,40 @@ export function GameSettingsPanel({
       onSettingsChange(settings);
     }
   }, [settings, isHost, onSettingsChange]);
+
+  const updateSettingsMutation = api.room.updateSettings.useMutation({
+    onSuccess: (data) => {
+      setLastSavedSettings(settings);
+      console.log('Settings updated successfully:', data);
+    },
+    onError: (error) => {
+      console.error('Failed to update settings:', error);
+      // Revert to last saved settings on error
+      setSettings(lastSavedSettings);
+    }
+  });
+
+  // Auto-save settings when they change (debounced)
+  useEffect(() => {
+    if (!isHost || disabled) return;
+
+    const timer = setTimeout(() => {
+      if (JSON.stringify(settings) !== JSON.stringify(lastSavedSettings) && isValid) {
+        updateSettingsMutation.mutate({
+          roomId,
+          settings: {
+            characters: settings.characters,
+            playerCount: settings.playerCount,
+            allowSpectators: settings.allowSpectators,
+            autoStart: settings.autoStart,
+            timeLimit: settings.timeLimit,
+          }
+        });
+      }
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timer);
+  }, [settings, lastSavedSettings, isHost, disabled, isValid, roomId, updateSettingsMutation]);
 
   const handleCharacterToggle = (characterId: string) => {
     if (disabled || !isHost) return;
@@ -109,12 +145,22 @@ export function GameSettingsPanel({
       {/* Header */}
       <div className="bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">
-            Game Settings
-          </h2>
+          <div className="flex items-center justify-center space-x-2">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent">
+              Game Settings
+            </h2>
+            {updateSettingsMutation.isPending && (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+            )}
+          </div>
           <p className="text-lg text-slate-100 opacity-90 leading-relaxed">
             Configure your Avalon game by selecting characters and adjusting settings
           </p>
+          {updateSettingsMutation.isError && (
+            <div className="text-red-500 text-sm bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+              Failed to save settings. Changes will be retried automatically.
+            </div>
+          )}
         </div>
 
         {/* Player Count Selector */}
@@ -125,8 +171,8 @@ export function GameSettingsPanel({
           <select
             value={settings.playerCount}
             onChange={(e) => handlePlayerCountChange(Number(e.target.value))}
-            disabled={disabled}
-            className="bg-[#1a1a2e] border border-slate-600/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300"
+            disabled={disabled || updateSettingsMutation.isPending}
+            className="bg-[#1a1a2e] border border-slate-600/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-300 disabled:opacity-50"
           >
             {[5, 6, 7, 8, 9, 10].map(count => (
               <option key={count} value={count}>
@@ -144,8 +190,8 @@ export function GameSettingsPanel({
                 type="checkbox"
                 checked={settings.allowSpectators}
                 onChange={(e) => handleSettingChange('allowSpectators', e.target.checked)}
-                disabled={disabled}
-                className="w-4 h-4 text-blue-500 bg-[#1a1a2e] border border-slate-600/30 rounded focus:ring-blue-500 focus:ring-2"
+                disabled={disabled || updateSettingsMutation.isPending}
+                className="w-4 h-4 text-blue-500 bg-[#1a1a2e] border border-slate-600/30 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50"
               />
               <span className="text-slate-200">Allow Spectators</span>
             </label>
@@ -157,8 +203,8 @@ export function GameSettingsPanel({
                 type="checkbox"
                 checked={settings.autoStart}
                 onChange={(e) => handleSettingChange('autoStart', e.target.checked)}
-                disabled={disabled}
-                className="w-4 h-4 text-blue-500 bg-[#1a1a2e] border border-slate-600/30 rounded focus:ring-blue-500 focus:ring-2"
+                disabled={disabled || updateSettingsMutation.isPending}
+                className="w-4 h-4 text-blue-500 bg-[#1a1a2e] border border-slate-600/30 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50"
               />
               <span className="text-slate-200">Auto Start Game</span>
             </label>
@@ -171,7 +217,7 @@ export function GameSettingsPanel({
         selectedCharacters={settings.characters}
         onCharacterToggle={handleCharacterToggle}
         validationErrors={validationErrors}
-        disabled={disabled}
+        disabled={disabled || updateSettingsMutation.isPending}
       />
 
       {/* Settings Summary */}
