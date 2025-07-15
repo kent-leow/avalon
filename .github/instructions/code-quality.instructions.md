@@ -29,3 +29,13 @@ applyTo: '**'
 - Do not introduce unnecessary complexity; keep solutions as simple as possible.
 - Document all public APIs and exported functions.
 - Review code for security, performance, and accessibility issues before merging.
+
+## Typescript
+- Use "paths": {"~/*": ["./src/*"]} in tsconfig.json for absolute imports.
+- Use interfaces for complex types and avoid inline type definitions.
+- Use enums for fixed sets of values instead of strings or numbers.
+- Use type guards for runtime type checking when necessary.
+- Use `unknown` type for values that can be of any type, and narrow down types with type assertions or checks.
+- Prefer `const` over `let` for variables that do not change.
+- Use `readonly` for arrays and objects that should not be mutated.
+- Use `as const` for literals that should be treated as their literal type.
