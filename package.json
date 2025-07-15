@@ -18,6 +18,8 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -40,11 +42,16 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.0.15",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.14.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.23.0",
     "eslint-config-next": "^15.2.3",
+    "jest": "^30.0.4",
+    "jest-environment-jsdom": "^30.0.4",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
