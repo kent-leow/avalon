@@ -24,6 +24,27 @@
 - **Tension Building**: Countdown timers and dramatic reveal animations
 - **Anonymous Voting**: Secure visual feedback without revealing individual choices
 - **Decision Support**: Clear information about consequences of vote outcomes
+- **Rejection Tracking**: Visual counter showing rejection attempts (max 5 before evil wins)
+
+### Enhanced Animation & Interaction Design
+- **Voting Animations**:
+  - Button press: Scale down with haptic feedback
+  - Vote submission: Smooth transition to "voted" state
+  - Vote change: Fluid transition between states
+  - Countdown: Dramatic timer with color changes
+  - Rejection counter: Pulsing warning as it approaches 5
+- **Results Reveal**:
+  - Dramatic countdown: 3-2-1 with screen shake
+  - Vote tallies: Animated number counting
+  - Outcome announcement: Explosive reveal with particles
+  - Leadership rotation: Smooth crown transfer animation
+  - Evil victory: Dramatic sequence if 5 rejections reached
+
+### Rejection Tracking System
+- **Visual Counter**: Prominent display of rejection attempts (e.g., "3/5 rejections")
+- **Escalating Tension**: UI becomes more dramatic as counter approaches 5
+- **Critical Warning**: Special animation and sound when at 4 rejections
+- **Automatic Victory**: Evil team wins immediately at 5 rejections with cinematic reveal
 
 ### Color System (Enhanced)
 | Design Color | Semantic Purpose | Element | Implementation Method |

@@ -16,6 +16,9 @@
 * Mobile-specific UI patterns are used where appropriate (bottom sheets, slide-up panels)
 * Interface works across different mobile browsers (Safari, Chrome, Firefox)
 * Progressive Web App features enhance mobile experience (offline mode, home screen install)
+* Pull-to-refresh functionality for game state updates
+* Swipe gestures for navigation between game screens
+* Optimized keyboard input for mobile devices
 
 ## Enhanced Mobile UI/UX Specifications
 

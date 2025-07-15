@@ -14,7 +14,10 @@
 * Host panel is accessible throughout the game with floating interface
 * Host actions are logged and visible to players when appropriate with transparency
 * Host can transfer hosting rights to another player with secure handoff
+* Host can configure time limits for different game phases
+* Host can enable/disable spectator mode for the room
 * Room automatically cleans up after 1 hour of inactivity with warning notifications
+* Host can view comprehensive game analytics and player statistics
 
 ## Enhanced UI/UX Specifications
 

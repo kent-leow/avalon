@@ -268,9 +268,9 @@ export interface Character {
   team: 'good' | 'evil';
   description: string;
   ability: string;
-  dependencies: string[];
-  conflicts: string[];
-  requiredFor: string[];
+  dependencies: string[]; // Required characters
+  conflicts: string[]; // Mutually exclusive characters
+  requiredFor: string[]; // Characters that require this one
   minPlayers: number;
   maxPlayers: number;
 }
@@ -281,6 +281,47 @@ export interface ValidationError {
   characters: string[];
   severity: 'error' | 'warning';
 }
+
+// Official Avalon Character Rules
+export const AVALON_CHARACTERS = {
+  merlin: {
+    dependencies: [],
+    conflicts: [],
+    requiredFor: ['percival', 'assassin'],
+    seesEvil: true,
+    seenBy: ['percival', 'morgana']
+  },
+  percival: {
+    dependencies: ['merlin', 'morgana'],
+    conflicts: [],
+    requiredFor: [],
+    sees: ['merlin', 'morgana'] // Cannot distinguish
+  },
+  morgana: {
+    dependencies: [],
+    conflicts: [],
+    requiredFor: ['percival'],
+    appearsTo: ['percival'] // Appears as Merlin
+  },
+  mordred: {
+    dependencies: ['merlin'],
+    conflicts: [],
+    requiredFor: [],
+    hiddenFrom: ['merlin'] // Hidden from Merlin's sight
+  },
+  oberon: {
+    dependencies: [],
+    conflicts: [],
+    requiredFor: [],
+    isolated: true // Doesn't see other evil, they don't see him
+  },
+  assassin: {
+    dependencies: ['merlin'],
+    conflicts: [],
+    requiredFor: [],
+    canKill: ['merlin'] // Can attempt to kill Merlin
+  }
+} as const;
 ```
 
 **TypeScript Types** (`src/types/game-settings.ts`):

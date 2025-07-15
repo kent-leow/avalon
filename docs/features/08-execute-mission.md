@@ -24,6 +24,13 @@
 - **Cinematic Reveals**: Dramatic animations for mission outcomes
 - **Team Coordination**: Clear indication of who is voting
 - **Consequence Visualization**: Clear display of what's at stake
+- **Two-Fail Rule**: Special UI for Mission 4 with 7+ players requiring 2 fails
+
+### Mission Outcome Rules
+- **Standard Missions**: 1 fail vote causes mission failure
+- **Mission 4 Exception**: Requires 2 fail votes for 7+ players
+- **Visual Indicators**: Clear display of fail requirements per mission
+- **Dramatic Reveals**: Enhanced animations for critical mission outcomes
 
 ### Color System (Enhanced)
 | Design Color | Semantic Purpose | Element | Implementation Method |

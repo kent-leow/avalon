@@ -255,7 +255,7 @@ export interface Mission {
   id: string;
   round: number;
   requiredPlayers: number;
-  requiresTwoFails: boolean;
+  requiresTwoFails: boolean; // Mission 4 for 7+ players
   selectedPlayers: string[];
   votes: MissionVote[];
   result?: 'success' | 'failure';
@@ -267,6 +267,22 @@ export interface MissionVote {
   vote: 'success' | 'failure';
   submittedAt: Date;
 }
+
+// Official Avalon Mission Rules
+export const MISSION_RULES = {
+  teamSizes: {
+    5: [2, 3, 2, 3, 3],
+    6: [2, 3, 4, 3, 4],
+    7: [2, 3, 3, 4, 4],
+    8: [3, 4, 4, 5, 5],
+    9: [3, 4, 4, 5, 5],
+    10: [3, 4, 4, 5, 5]
+  },
+  twoFailRules: {
+    // Mission 4 requires 2 fails for 7+ players
+    4: (playerCount: number) => playerCount >= 7
+  }
+} as const;
 ```
 
 **State Management:**

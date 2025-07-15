@@ -16,6 +16,9 @@
 * Players can rejoin using their UUID if disconnected with state recovery
 * Game continues smoothly even if some players have connection issues
 * Real-time indicators show connection status and player activity
+* Optimistic UI updates provide immediate feedback with rollback capability
+* State compression reduces bandwidth usage for large games
+* Automatic game state validation prevents desynchronization
 
 ## Enhanced Real-Time UI/UX Specifications
 
