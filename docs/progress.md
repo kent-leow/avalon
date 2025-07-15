@@ -98,19 +98,21 @@ All three core features now have full backend integration:
 - ✅ All components follow exact design specifications with proper colors and spacing
 - ✅ All components are error-free and ready for integration
 
-### Task 5.2: Feature 4 - API Integration (Next Step)
-- [ ] Update Room model in `prisma/schema.prisma` with enhanced gameState and phase fields
-- [ ] Update Player model with role and roleData fields
-- [ ] Create and run database migration
-- [ ] Update database ERD in `docs/erd.md`
-- [ ] Extend `src/server/api/routers/room.ts` with startGame procedure
-- [ ] Add checkStartRequirements procedure for validation
-- [ ] Add getGameState procedure for state retrieval
-- [ ] Implement secure role assignment logic
-- [ ] Add game state machine validation
-- [ ] Implement proper error handling and logging
+### Task 5.2: Feature 4 - API Integration ✅
+- ✅ Updated Room model in `prisma/schema.prisma` with enhanced gameState and phase fields
+- ✅ Updated Player model with role and roleData fields
+- ✅ Created and ran database migration (`20250715154618_add_game_state_and_role_fields`)
+- ✅ Updated database ERD in `docs/erd.md` with new fields and JSON schemas
+- ✅ Extended `src/server/api/routers/room.ts` with startGame procedure
+- ✅ Added checkStartRequirements procedure for validation
+- ✅ Added getGameState procedure for state retrieval
+- ✅ Added updatePlayerReady procedure for ready status management
+- ✅ Implemented secure role assignment logic with cryptographic randomization
+- ✅ Added game state machine validation for proper phase transitions
+- ✅ Implemented proper error handling and validation for all game start logic
+- ✅ Updated Room and Player type definitions in `src/types/room.ts`
 
-### Task 5.3: Feature 4 - Final Integration (Future)
+### Task 5.3: Feature 4 - Final Integration (Next Step)
 - [ ] Replace mock data with real tRPC calls in all components
 - [ ] Update state management to handle real data fetching
 - [ ] Implement proper error handling for API failures

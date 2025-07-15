@@ -4,7 +4,10 @@ import { createRoomCode, validateRoomCode, generateJoinUrl } from "~/lib/room-co
 import { generateSessionId } from "~/lib/session";
 import { validateCharacterConfiguration } from "~/lib/character-validation";
 import { getDefaultSettings } from "~/lib/default-settings";
+import { assignRoles, validateRoleConfiguration, getVisiblePlayers } from "~/lib/role-assignment";
+import { GameStateMachine, canStartGame } from "~/lib/game-state-machine";
 import type { GameState, GameSettings } from "~/types/room";
+import type { StartRequirement } from "~/types/game-state";
 
 // Input validation schemas
 const createRoomSchema = z.object({
@@ -33,6 +36,11 @@ const updateSettingsSchema = z.object({
     allowSpectators: z.boolean(),
     autoStart: z.boolean(),
   }),
+});
+
+const startGameSchema = z.object({
+  roomId: z.string().cuid("Invalid room ID"),
+  hostId: z.string().cuid("Invalid host ID"),
 });
 
 export const roomRouter = createTRPCRouter({
@@ -104,6 +112,7 @@ export const roomRouter = createTRPCRouter({
           hostId: "", // Will be set after creating host player
           gameState: gameState as any,
           settings: roomSettings as any,
+          phase: 'lobby',
           expiresAt,
         },
       });
@@ -116,6 +125,7 @@ export const roomRouter = createTRPCRouter({
         data: {
           name: hostName,
           isHost: true,
+          isReady: false,
           sessionId,
           roomId: room.id,
         },
@@ -208,6 +218,7 @@ export const roomRouter = createTRPCRouter({
             data: {
               name: playerName,
               isHost: false,
+              isReady: false,
               sessionId,
               roomId: room.id,
             },
@@ -220,6 +231,7 @@ export const roomRouter = createTRPCRouter({
           data: {
             name: playerName,
             isHost: false,
+            isReady: false,
             sessionId: newSessionId,
             roomId: room.id,
           },
@@ -300,6 +312,7 @@ export const roomRouter = createTRPCRouter({
           id: p.id,
           name: p.name,
           isHost: p.isHost,
+          isReady: p.isReady,
           joinedAt: p.joinedAt,
         })),
         createdAt: room.createdAt,
@@ -395,6 +408,310 @@ export const roomRouter = createTRPCRouter({
       return {
         isValid: validation.filter(error => error.severity === 'error').length === 0,
         errors: validation,
+      };
+    }),
+
+  /**
+   * Start the game (host only)
+   */
+  startGame: publicProcedure
+    .input(startGameSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, hostId } = input;
+      
+      // Find room with players
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: {
+          players: {
+            orderBy: {
+              joinedAt: 'asc',
+            },
+          },
+        },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Check if room has expired
+      if (new Date() > room.expiresAt) {
+        throw new Error("Room has expired");
+      }
+      
+      // Verify host permission
+      if (room.hostId !== hostId) {
+        throw new Error("Only the host can start the game");
+      }
+      
+      // Check if game has already started
+      const gameState = room.gameState as unknown as GameState;
+      if (gameState.phase !== 'lobby') {
+        throw new Error("Game has already started");
+      }
+      
+      // Validate start requirements
+      const startValidation = canStartGame(room.players.length);
+      if (!startValidation.canStart) {
+        throw new Error(`Cannot start game: ${startValidation.errors.join(", ")}`);
+      }
+      
+      // Get settings and validate role configuration
+      const settings = room.settings as unknown as GameSettings;
+      const roleValidation = validateRoleConfiguration(room.players.length, settings.characters);
+      if (!roleValidation.valid) {
+        throw new Error(`Invalid role configuration: ${roleValidation.errors.join(", ")}`);
+      }
+      
+      // Assign roles to players
+      const playersForAssignment = room.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        isHost: p.isHost,
+        role: p.role || undefined,
+        roleData: p.roleData ? p.roleData as any : undefined,
+        isReady: p.isReady,
+        joinedAt: p.joinedAt,
+        roomId: p.roomId,
+        sessionId: p.sessionId || undefined,
+      }));
+      
+      const roleAssignments = assignRoles(playersForAssignment, settings.characters);
+      
+      // Create updated game state
+      const stateMachine = new GameStateMachine(gameState);
+      const transitionSuccess = stateMachine.transitionTo('roleReveal');
+      if (!transitionSuccess) {
+        throw new Error("Invalid game state transition");
+      }
+      
+      const newGameState = stateMachine.getGameState();
+      
+      // Begin database transaction
+      const result = await ctx.db.$transaction(async (tx) => {
+        // Update room with new game state and phase
+        const updatedRoom = await tx.room.update({
+          where: { id: roomId },
+          data: {
+            gameState: newGameState as any,
+            phase: 'roleReveal',
+            startedAt: new Date(),
+          },
+        });
+        
+        // Update players with role assignments
+        const updatedPlayers = await Promise.all(
+          roleAssignments.map(async (assignment) => {
+            const visiblePlayers = getVisiblePlayers(assignment, roleAssignments);
+            const player = room.players.find(p => p.id === assignment.playerId)!;
+            
+            return tx.player.update({
+              where: { id: assignment.playerId },
+              data: {
+                role: assignment.roleId,
+                roleData: {
+                  roleId: assignment.roleId,
+                  assignedAt: assignment.assignedAt,
+                  visiblePlayers: visiblePlayers.map(vp => ({
+                    playerId: vp.playerId,
+                    roleId: vp.roleId,
+                    name: room.players.find(p => p.id === vp.playerId)?.name || 'Unknown',
+                  })),
+                } as any,
+              },
+            });
+          })
+        );
+        
+        return { room: updatedRoom, players: updatedPlayers };
+      });
+      
+      return {
+        success: true,
+        gameState: newGameState,
+        phase: 'roleReveal',
+        startedAt: result.room.startedAt,
+        message: "Game started successfully",
+      };
+    }),
+
+  /**
+   * Check start requirements
+   */
+  checkStartRequirements: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { roomId } = input;
+      
+      // Find room with players
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: {
+          players: true,
+        },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Check if room has expired
+      if (new Date() > room.expiresAt) {
+        throw new Error("Room has expired");
+      }
+      
+      const gameState = room.gameState as unknown as GameState;
+      const settings = room.settings as unknown as GameSettings;
+      
+      // Build requirements list
+      const requirements: StartRequirement[] = [];
+      
+      // Minimum players requirement
+      const minPlayers = 5;
+      requirements.push({
+        id: 'min-players',
+        name: 'Minimum Players',
+        description: `At least ${minPlayers} players required`,
+        status: room.players.length >= minPlayers ? 'satisfied' : 'pending',
+        required: true,
+      });
+      
+      // Valid settings requirement
+      const roleValidation = validateRoleConfiguration(room.players.length, settings.characters);
+      requirements.push({
+        id: 'valid-settings',
+        name: 'Valid Game Settings',
+        description: 'Character configuration is valid',
+        status: roleValidation.valid ? 'satisfied' : 'failed',
+        required: true,
+      });
+      
+      // Game phase requirement
+      requirements.push({
+        id: 'lobby-phase',
+        name: 'Game in Lobby',
+        description: 'Game must be in lobby phase to start',
+        status: gameState.phase === 'lobby' ? 'satisfied' : 'failed',
+        required: true,
+      });
+      
+      // All players ready (optional)
+      const allPlayersReady = room.players.every(p => p.isReady);
+      requirements.push({
+        id: 'all-ready',
+        name: 'All Players Ready',
+        description: 'All players have confirmed they are ready',
+        status: allPlayersReady ? 'satisfied' : 'pending',
+        required: false,
+      });
+      
+      return {
+        requirements,
+        canStart: requirements.filter(r => r.required).every(r => r.status === 'satisfied'),
+        playerCount: room.players.length,
+        minPlayers,
+        gamePhase: gameState.phase,
+      };
+    }),
+
+  /**
+   * Get current game state
+   */
+  getGameState: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { roomId } = input;
+      
+      // Find room
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: {
+          players: {
+            orderBy: {
+              joinedAt: 'asc',
+            },
+          },
+        },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Check if room has expired
+      if (new Date() > room.expiresAt) {
+        throw new Error("Room has expired");
+      }
+      
+      const gameState = room.gameState as unknown as GameState;
+      
+      return {
+        gameState,
+        phase: room.phase,
+        startedAt: room.startedAt,
+        players: room.players.map(p => ({
+          id: p.id,
+          name: p.name,
+          isHost: p.isHost,
+          isReady: p.isReady,
+          hasRole: !!p.role,
+          joinedAt: p.joinedAt,
+        })),
+      };
+    }),
+
+  /**
+   * Update player ready status
+   */
+  updatePlayerReady: publicProcedure
+    .input(z.object({
+      playerId: z.string().cuid("Invalid player ID"),
+      isReady: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { playerId, isReady } = input;
+      
+      // Find player
+      const player = await ctx.db.player.findUnique({
+        where: { id: playerId },
+        include: {
+          room: true,
+        },
+      });
+      
+      if (!player) {
+        throw new Error("Player not found");
+      }
+      
+      // Check if room has expired
+      if (new Date() > player.room.expiresAt) {
+        throw new Error("Room has expired");
+      }
+      
+      // Check if game has started
+      const gameState = player.room.gameState as unknown as GameState;
+      if (gameState.phase !== 'lobby') {
+        throw new Error("Cannot change ready status after game has started");
+      }
+      
+      // Update player ready status
+      const updatedPlayer = await ctx.db.player.update({
+        where: { id: playerId },
+        data: { isReady },
+      });
+      
+      return {
+        success: true,
+        player: {
+          id: updatedPlayer.id,
+          name: updatedPlayer.name,
+          isReady: updatedPlayer.isReady,
+        },
       };
     }),
 

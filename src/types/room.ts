@@ -5,6 +5,9 @@ export interface Room {
   players: Player[];
   gameState: GameState;
   settings: GameSettings;
+  phase: string;
+  startedAt?: Date;
+  maxPlayers: number;
   createdAt: Date;
   updatedAt: Date;
   expiresAt: Date;
@@ -15,41 +18,67 @@ export interface Player {
   name: string;
   isHost: boolean;
   role?: string;
+  roleData?: RoleData;
+  isReady: boolean;
   joinedAt: Date;
   roomId: string;
   sessionId?: string;
 }
 
+export interface RoleData {
+  roleId: string;
+  assignedAt: Date;
+  visiblePlayers: VisiblePlayer[];
+  abilities: string[];
+  seesEvil: boolean;
+  seenByMerlin: boolean;
+  isAssassin: boolean;
+}
+
+export interface VisiblePlayer {
+  playerId: string;
+  roleId: string;
+  name: string;
+}
+
 export interface GameState {
-  phase: 'lobby' | 'roleReveal' | 'voting' | 'mission' | 'gameOver';
+  phase: 'lobby' | 'roleReveal' | 'voting' | 'missionSelect' | 'missionVote' | 'missionResult' | 'assassinAttempt' | 'gameOver';
   round: number;
   leaderIndex: number;
+  startedAt?: Date;
   votes: Vote[];
   missions: Mission[];
+  assassinAttempt?: AssassinAttempt;
 }
 
 export interface Vote {
-  id: string;
   playerId: string;
   vote: 'approve' | 'reject';
   round: number;
-  timestamp: Date;
+  votedAt: Date;
 }
 
 export interface Mission {
   id: string;
   round: number;
+  teamSize: number;
   teamMembers: string[];
   votes: MissionVote[];
-  result: 'success' | 'fail' | 'pending';
-  timestamp: Date;
+  result?: 'success' | 'failure';
+  completedAt?: Date;
 }
 
 export interface MissionVote {
-  id: string;
   playerId: string;
-  vote: 'success' | 'fail';
-  timestamp: Date;
+  vote: 'success' | 'failure';
+  votedAt: Date;
+}
+
+export interface AssassinAttempt {
+  assassinId: string;
+  targetId: string;
+  success: boolean;
+  attemptedAt: Date;
 }
 
 export interface GameSettings {

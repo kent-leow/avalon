@@ -23,8 +23,10 @@ model Room {
     id          String   @id @default(cuid())
     code        String   @unique
     hostId      String
-    gameState   Json
+    gameState   Json     // Enhanced GameState object with phase, round, votes, missions
     settings    Json
+    phase       String   @default("lobby") // Current game phase
+    startedAt   DateTime? // When the game was started
     maxPlayers  Int      @default(10)
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
@@ -32,6 +34,7 @@ model Room {
     players     Player[]
     
     @@index([code])
+    @@index([phase])
     @@index([expiresAt])
     @@index([hostId])
 }
@@ -40,7 +43,9 @@ model Player {
     id        String   @id @default(cuid())
     name      String
     isHost    Boolean  @default(false)
-    role      String?
+    role      String?  // Role ID assigned during game start
+    roleData  Json?    // Role-specific data and visible players
+    isReady   Boolean  @default(false) // Player ready status for game start
     joinedAt  DateTime @default(now())
     sessionId String?  @unique
     roomId    String
