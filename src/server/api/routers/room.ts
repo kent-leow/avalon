@@ -8,10 +8,19 @@ import { assignRoles, validateRoleConfiguration, getVisiblePlayers } from "~/lib
 import { GameStateMachine, canStartGame } from "~/lib/game-state-machine";
 import { computeRoleKnowledge } from "~/lib/role-knowledge";
 import { getMissionRequirements, validateMissionTeam } from "~/lib/mission-rules";
+import { 
+  calculateVotingProgress, 
+  calculateRejectionTracker, 
+  calculateVotingResults,
+  validateVotingSession,
+  areAllPlayersVoted,
+  canPlayerChangeVote 
+} from "~/lib/voting-utils";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
 import type { RoleKnowledge } from "~/types/role-knowledge";
 import type { MissionPlayer } from "~/types/mission";
+import type { VotingSession, VoteChoice, Vote } from "~/types/voting";
 
 // Input validation schemas
 const createRoomSchema = z.object({
@@ -1068,6 +1077,208 @@ export const roomRouter = createTRPCRouter({
         players: missionPlayers,
         isLeader: player.id === currentLeader?.id,
         proposedTeam: [], // TODO: Store proposed team in game state
+      };
+    }),
+
+  // Voting procedures
+  submitVote: publicProcedure
+    .input(z.object({
+      roomId: z.string(),
+      playerId: z.string(),
+      choice: z.enum(['approve', 'reject']),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { roomId, playerId, choice } = input;
+      
+      // Get room and validate
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      if (room.phase !== 'voting') {
+        throw new Error(`Cannot vote in phase: ${room.phase}`);
+      }
+      
+      // Validate player is in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found");
+      }
+      
+      const gameState = room.gameState as unknown as GameState & {
+        votes?: Vote[];
+        votingResult?: any;
+        rejectionCount?: number;
+        lastUpdated?: Date;
+      };
+      
+      // Create or update vote in game state
+      const votes = (gameState.votes || []) as Vote[];
+      const existingVoteIndex = votes.findIndex(v => v.playerId === playerId);
+      
+      const newVote: Vote = {
+        id: `vote-${playerId}-${Date.now()}`,
+        playerId,
+        playerName: player.name,
+        choice,
+        submittedAt: new Date(),
+        roundId: `round-${gameState.round || 1}`,
+        missionId: `mission-${gameState.round || 1}`,
+      };
+      
+      let updatedVotes: Vote[];
+      if (existingVoteIndex >= 0) {
+        // Update existing vote
+        updatedVotes = votes.map((v, index) => 
+          index === existingVoteIndex ? newVote : v
+        );
+      } else {
+        // Add new vote
+        updatedVotes = [...votes, newVote];
+      }
+      
+      // Check if all players have voted
+      const allPlayersVoted = areAllPlayersVoted(updatedVotes, room.players.length);
+      
+      let nextPhase = room.phase;
+      let votingResult = null;
+      
+      if (allPlayersVoted) {
+        // Calculate voting results
+        const currentRejections = gameState.rejectionCount || 0;
+        const currentLeaderIndex = gameState.leaderIndex || 0;
+        
+        votingResult = calculateVotingResults(
+          updatedVotes,
+          room.players.length,
+          currentRejections,
+          currentLeaderIndex,
+          room.players.length
+        );
+        
+        nextPhase = votingResult.nextPhase;
+        
+        // Update game state based on results
+        const updatedGameState = {
+          ...gameState,
+          votes: updatedVotes,
+          votingResult,
+          phase: nextPhase,
+          rejectionCount: votingResult.approved ? currentRejections : currentRejections + 1,
+          leaderIndex: votingResult.nextLeaderIndex ?? currentLeaderIndex,
+          lastUpdated: new Date(),
+        };
+        
+        await ctx.db.room.update({
+          where: { id: roomId },
+          data: {
+            phase: nextPhase,
+            gameState: updatedGameState as any,
+          },
+        });
+      } else {
+        // Update votes in game state
+        const updatedGameState = {
+          ...gameState,
+          votes: updatedVotes,
+          lastUpdated: new Date(),
+        };
+        
+        await ctx.db.room.update({
+          where: { id: roomId },
+          data: {
+            gameState: updatedGameState as any,
+          },
+        });
+      }
+      
+      return {
+        success: true,
+        vote: newVote,
+        allPlayersVoted,
+        result: votingResult,
+        nextPhase,
+      };
+    }),
+
+  getVotingState: publicProcedure
+    .input(z.object({
+      roomId: z.string(),
+      playerId: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      const { roomId, playerId } = input;
+      
+      // Get room and validate
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Validate player is in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found");
+      }
+      
+      const gameState = room.gameState as unknown as GameState & {
+        votes?: Vote[];
+        votingResult?: any;
+        rejectionCount?: number;
+        lastUpdated?: Date;
+      };
+      const votes = (gameState.votes || []) as Vote[];
+      const rejectionCount = gameState.rejectionCount || 0;
+      
+      // Get voting progress
+      const progress = calculateVotingProgress(
+        votes,
+        room.players.map(p => ({
+          id: p.id,
+          name: p.name,
+          isOnline: true, // Default to online for now
+        }))
+      );
+      
+      // Get rejection tracker
+      const rejectionTracker = calculateRejectionTracker(rejectionCount);
+      
+      // Get current player's vote
+      const currentPlayerVote = votes.find(v => v.playerId === playerId);
+      
+      // Check if player can change vote (simplified - always allow for now)
+      const canChangeVote = !gameState.votingResult && room.phase === 'voting';
+      
+      // Calculate time remaining (simplified - 60 seconds from phase start)
+      const phaseStartTime = new Date(gameState.lastUpdated || new Date());
+      const deadline = new Date(phaseStartTime.getTime() + 60000); // 60 seconds
+      const timeRemaining = Math.max(0, Math.floor((deadline.getTime() - Date.now()) / 1000));
+      
+      return {
+        session: {
+          id: `voting-${gameState.round || 1}`,
+          missionId: `mission-${gameState.round || 1}`,
+          roundId: `round-${gameState.round || 1}`,
+          proposalNumber: rejectionCount + 1,
+          status: gameState.votingResult ? 'completed' : 'active',
+          votes,
+          result: gameState.votingResult,
+        },
+        progress,
+        rejectionTracker,
+        currentPlayerVote: currentPlayerVote?.choice as VoteChoice,
+        canChangeVote,
+        timeRemaining,
+        isRevealing: !!gameState.votingResult,
       };
     }),
 });
