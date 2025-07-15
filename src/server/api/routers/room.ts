@@ -6,8 +6,10 @@ import { validateCharacterConfiguration } from "~/lib/character-validation";
 import { getDefaultSettings } from "~/lib/default-settings";
 import { assignRoles, validateRoleConfiguration, getVisiblePlayers } from "~/lib/role-assignment";
 import { GameStateMachine, canStartGame } from "~/lib/game-state-machine";
+import { computeRoleKnowledge } from "~/lib/role-knowledge";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
+import type { RoleKnowledge } from "~/types/role-knowledge";
 
 // Input validation schemas
 const createRoomSchema = z.object({
@@ -749,6 +751,173 @@ export const roomRouter = createTRPCRouter({
       return {
         deletedCount: expiredRooms.length,
         deletedRooms: expiredRooms.map(r => r.code),
+      };
+    }),
+
+  /**
+   * Get role knowledge for a specific player
+   */
+  getRoleKnowledge: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+      playerId: z.string().cuid("Invalid player ID"),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { roomId, playerId } = input;
+      
+      // Get room with all players and their roles
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: {
+          players: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+              roleData: true,
+            },
+          },
+        },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Find the requesting player
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found in room");
+      }
+      
+      // Check if game has started and roles are assigned
+      if (room.phase !== 'role-reveal' && room.phase !== 'roleReveal' || !player.role) {
+        throw new Error("Role information not available yet");
+      }
+      
+      // Parse player role data
+      const playerRoleData = player.roleData ? JSON.parse(player.roleData as string) : {};
+      const playerRole = {
+        id: player.role,
+        name: player.role,
+        team: playerRoleData.team || 'good',
+        description: playerRoleData.description || '',
+        abilities: playerRoleData.abilities || [],
+        seesEvil: playerRoleData.seesEvil || false,
+        seenByMerlin: playerRoleData.seenByMerlin || false,
+        isAssassin: playerRoleData.isAssassin || false,
+      };
+      
+      // Prepare player data for role knowledge computation
+      const playersWithRoles = room.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        role: {
+          id: p.role || 'servant',
+          name: p.role || 'servant',
+          team: p.roleData ? (JSON.parse(p.roleData as string).team || 'good') : 'good',
+          description: '',
+          abilities: [],
+          seesEvil: false,
+          seenByMerlin: false,
+          isAssassin: false,
+        }
+      }));
+      
+      // Compute role knowledge for this player
+      const roleKnowledge = computeRoleKnowledge(playerId, playerRole, playersWithRoles);
+      
+      return roleKnowledge;
+    }),
+
+  /**
+   * Confirm that a player has seen their role
+   */
+  confirmRoleRevealed: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+      playerId: z.string().cuid("Invalid player ID"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, playerId } = input;
+      
+      // Get room to verify it exists and check phase
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: {
+          players: {
+            select: {
+              id: true,
+              isReady: true,
+            },
+          },
+        },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      if (room.phase !== 'role-reveal' && room.phase !== 'roleReveal') {
+        throw new Error("Not in role reveal phase");
+      }
+      
+      // Verify player exists in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found in room");
+      }
+      
+      // Mark player as having seen their role (using isReady field)
+      await ctx.db.player.update({
+        where: { id: playerId },
+        data: { isReady: true },
+      });
+      
+      // Check if all players have seen their roles
+      const updatedRoom = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: {
+          players: {
+            select: {
+              isReady: true,
+            },
+          },
+        },
+      });
+      
+      if (!updatedRoom) {
+        throw new Error("Room not found");
+      }
+      
+      const allPlayersReady = updatedRoom.players.every(p => p.isReady);
+      
+      // If all players have seen their roles, advance to next phase
+      if (allPlayersReady) {
+        const gameState = room.gameState as unknown as GameState;
+        const stateMachine = new GameStateMachine(gameState);
+        const validNextPhases = stateMachine.getValidNextPhases();
+        const nextPhase = validNextPhases[0] || 'voting'; // Default to voting phase
+        
+        const updatedGameState = {
+          ...gameState,
+          phase: nextPhase,
+          lastUpdated: new Date(),
+        };
+        
+        await ctx.db.room.update({
+          where: { id: roomId },
+          data: {
+            phase: nextPhase,
+            gameState: updatedGameState as any,
+          },
+        });
+      }
+      
+      return {
+        success: true,
+        allPlayersReady,
+        nextPhase: allPlayersReady ? 'voting' : 'roleReveal',
       };
     }),
 });

@@ -16,6 +16,8 @@ interface RoleRevealScreenProps {
   knownPlayers: KnownPlayer[];
   timeRemaining?: number;
   onContinue: () => void;
+  isLoading?: boolean;
+  hasConfirmed?: boolean;
   className?: string;
 }
 
@@ -25,8 +27,10 @@ export default function RoleRevealScreen({
   playerName,
   playerRole,
   knownPlayers,
-  timeRemaining = 60,
+  timeRemaining = 30,
   onContinue,
+  isLoading = false,
+  hasConfirmed = false,
   className = "",
 }: RoleRevealScreenProps) {
   const [showKnowledge, setShowKnowledge] = useState(false);

@@ -128,7 +128,7 @@ All three core features now have full backend integration:
 
 ## Phase 4: Next Features - IN PROGRESS ✅
 
-### Task 6.1: Feature 5 - Reveal Character Roles (UI Implementation Complete) ✅
+### Task 6.1: Feature 5 - Reveal Character Roles (Backend Integration Complete) ✅
 - ✅ Created `src/types/role-knowledge.ts` with RoleKnowledge and KnownPlayer types
 - ✅ Created `src/lib/role-knowledge.ts` with role knowledge computation logic
 - ✅ Created `src/app/room/[roomCode]/game/PlayerRoleCard.tsx` - Mystical role display component
@@ -138,10 +138,15 @@ All three core features now have full backend integration:
 - ✅ Created `src/app/room/[roomCode]/game/RoleRevealScreen.tsx` - Main role reveal interface
 - ✅ Created `src/app/room/[roomCode]/game/RoleRevealDemo.tsx` - Demo interface with all roles
 - ✅ Created `src/app/room/[roomCode]/game/demo/page.tsx` - Demo page route
+- ✅ Extended `src/server/api/routers/room.ts` with `getRoleKnowledge` and `confirmRoleRevealed` procedures
+- ✅ Created `src/app/room/[roomCode]/game/RoleRevealIntegration.tsx` - Real API integration component
+- ✅ Created `src/app/room/[roomCode]/game/integration/page.tsx` - Integration demo page
+- ✅ Updated ContinueButton with loading and confirmation states
 - ✅ All components follow exact design specifications with mystical theming
-- ✅ All components are error-free and ready for backend integration
-- 🔄 Backend API integration needed for role knowledge retrieval
-- 🔄 Real-time Socket.IO integration needed for synchronized role reveal
+- ✅ All components are error-free and ready for production use
+- ✅ Backend API integration complete with secure role knowledge retrieval
+- ✅ Real-time phase progression when all players have seen their roles
+- 🔄 Real-time Socket.IO integration needed for synchronized role reveal across all players
 
 ### Task 6.2: Feature 6 - Select Mission Team (Ready for Implementation)
 - [ ] Mission team selection interface
@@ -188,6 +193,8 @@ All three core features now have full backend integration:
 - `src/app/room/[roomCode]/game/RoleRevealScreen.tsx` - Main role reveal interface ✅
 - `src/app/room/[roomCode]/game/RoleRevealDemo.tsx` - Demo interface with all roles ✅
 - `src/app/room/[roomCode]/game/demo/page.tsx` - Demo page route ✅
+- `src/app/room/[roomCode]/game/RoleRevealIntegration.tsx` - Real API integration component ✅
+- `src/app/room/[roomCode]/game/integration/page.tsx` - Integration demo page ✅
 
 ### Types & Utilities
 - `src/types/game-state.ts` - Game state and start requirement types
