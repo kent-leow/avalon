@@ -45,6 +45,8 @@ export function JoinRoomForm({
         hostId: '', // Will be populated from room info
         players: [], // Will be populated from room info
         gameState: data.room.gameState,
+        phase: 'lobby', // Default phase for joined room
+        maxPlayers: 10, // Default max players
         settings: {
           characters: [],
           playerCount: data.room.playerCount,
@@ -60,6 +62,7 @@ export function JoinRoomForm({
         id: data.player.id,
         name: data.player.name,
         isHost: data.player.isHost,
+        isReady: false, // Default to not ready when joining
         joinedAt: new Date(),
         roomId: data.room.id,
         sessionId: data.player.sessionId,

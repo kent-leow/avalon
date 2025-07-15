@@ -36,10 +36,13 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
         id: data.id,
         code: data.code,
         hostId: data.hostId,
+        phase: 'lobby', // Default phase when creating room
+        maxPlayers: 10, // Default max players
         players: [{
           id: data.hostId,
           name: hostName,
           isHost: true,
+          isReady: false, // Host starts as not ready
           joinedAt: new Date(),
           roomId: data.id,
           sessionId: data.sessionId,
