@@ -7,9 +7,11 @@ import { getDefaultSettings } from "~/lib/default-settings";
 import { assignRoles, validateRoleConfiguration, getVisiblePlayers } from "~/lib/role-assignment";
 import { GameStateMachine, canStartGame } from "~/lib/game-state-machine";
 import { computeRoleKnowledge } from "~/lib/role-knowledge";
+import { getMissionRequirements, validateMissionTeam } from "~/lib/mission-rules";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
 import type { RoleKnowledge } from "~/types/role-knowledge";
+import type { MissionPlayer } from "~/types/mission";
 
 // Input validation schemas
 const createRoomSchema = z.object({
@@ -918,6 +920,154 @@ export const roomRouter = createTRPCRouter({
         success: true,
         allPlayersReady,
         nextPhase: allPlayersReady ? 'voting' : 'roleReveal',
+      };
+    }),
+
+  // Mission team selection procedures
+  submitMissionTeam: publicProcedure
+    .input(z.object({
+      roomId: z.string(),
+      playerId: z.string(),
+      teamIds: z.array(z.string()),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { roomId, playerId, teamIds } = input;
+      
+      // Get room and validate
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      if (room.phase !== 'teamSelection') {
+        throw new Error(`Cannot submit team in phase: ${room.phase}`);
+      }
+      
+      // Validate player is the leader
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found");
+      }
+      
+      const gameState = room.gameState as unknown as GameState;
+      const currentLeaderIndex = gameState.leaderIndex ?? 0;
+      const sortedPlayers = room.players.sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime());
+      const currentLeader = sortedPlayers[currentLeaderIndex];
+      
+      if (!currentLeader || player.id !== currentLeader.id) {
+        throw new Error("Only the mission leader can submit the team");
+      }
+      
+      // Convert players to MissionPlayer format
+      const missionPlayers: MissionPlayer[] = room.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        role: (p.roleData as any)?.role || 'servant',
+        isOnline: true, // Default to online for now
+        isLeader: p.id === currentLeader.id,
+      }));
+      
+      // Get current mission data
+      const missionRound = (gameState.missions?.length ?? 0) + 1;
+      const mission = {
+        id: `mission-${missionRound}`,
+        round: missionRound,
+        requiredPlayers: getMissionRequirements(missionRound, room.players.length).requiredPlayers,
+        failsRequired: getMissionRequirements(missionRound, room.players.length).failsRequired,
+        leaderIndex: currentLeaderIndex,
+        description: getMissionRequirements(missionRound, room.players.length).description,
+        specialRules: getMissionRequirements(missionRound, room.players.length).specialRules,
+      };
+      
+      // Validate team
+      const validation = validateMissionTeam(teamIds, mission, missionPlayers);
+      if (!validation.success) {
+        throw new Error(validation.error || "Invalid team selection");
+      }
+      
+      // Update game state with proposed team
+      const updatedGameState = {
+        ...gameState,
+        votes: [], // Reset votes for new team proposal
+        phase: 'voting' as const,
+        lastUpdated: new Date(),
+      };
+      
+      await ctx.db.room.update({
+        where: { id: roomId },
+        data: {
+          phase: 'voting',
+          gameState: updatedGameState as any,
+        },
+      });
+      
+      return {
+        success: true,
+        teamIds,
+        nextPhase: 'voting',
+      };
+    }),
+
+  getMissionData: publicProcedure
+    .input(z.object({
+      roomId: z.string(),
+      playerId: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      const { roomId, playerId } = input;
+      
+      // Get room and validate
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Validate player is in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found");
+      }
+      
+      const gameState = room.gameState as unknown as GameState;
+      const currentLeaderIndex = gameState.leaderIndex ?? 0;
+      const sortedPlayers = room.players.sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime());
+      const currentLeader = sortedPlayers[currentLeaderIndex];
+      
+      // Convert players to MissionPlayer format
+      const missionPlayers: MissionPlayer[] = room.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        role: (p.roleData as any)?.role || 'servant',
+        isOnline: true, // Default to online for now
+        isLeader: p.id === currentLeader?.id,
+      }));
+      
+      // Get current mission data
+      const missionRound = (gameState.missions?.length ?? 0) + 1;
+      const requirements = getMissionRequirements(missionRound, room.players.length);
+      const mission = {
+        id: `mission-${missionRound}`,
+        round: missionRound,
+        requiredPlayers: requirements.requiredPlayers,
+        failsRequired: requirements.failsRequired,
+        leaderIndex: currentLeaderIndex,
+        description: requirements.description,
+        specialRules: requirements.specialRules,
+      };
+      
+      return {
+        mission,
+        players: missionPlayers,
+        isLeader: player.id === currentLeader?.id,
+        proposedTeam: [], // TODO: Store proposed team in game state
       };
     }),
 });

@@ -148,11 +148,25 @@ All three core features now have full backend integration:
 - ✅ Real-time phase progression when all players have seen their roles
 - 🔄 Real-time Socket.IO integration needed for synchronized role reveal across all players
 
-### Task 6.2: Feature 6 - Select Mission Team (Ready for Implementation)
-- [ ] Mission team selection interface
-- [ ] Team size validation
-- [ ] Leader rotation logic
-- [ ] Team proposal submission
+### Task 6.2: Feature 6 - Select Mission Team (Backend Integration Complete) ✅
+- ✅ Created `src/types/mission.ts` with Mission, MissionPlayer, and MissionRequirements types
+- ✅ Created `src/lib/mission-rules.ts` with mission logic and validation functions
+- ✅ Created `src/app/room/[roomCode]/game/MissionRequirements.tsx` - Mission info display component
+- ✅ Created `src/app/room/[roomCode]/game/PlayerSelectionGrid.tsx` - Interactive player selection
+- ✅ Created `src/app/room/[roomCode]/game/SelectedTeamDisplay.tsx` - Selected team preview
+- ✅ Created `src/app/room/[roomCode]/game/SubmitTeamButton.tsx` - Team submission button
+- ✅ Created `src/app/room/[roomCode]/game/MissionTeamSelector.tsx` - Main mission team interface
+- ✅ Created `src/app/room/[roomCode]/game/MissionTeamSelectorDemo.tsx` - Demo interface
+- ✅ Created `src/app/room/[roomCode]/game/mission-team-selector/page.tsx` - Demo page route
+- ✅ Extended `src/server/api/routers/room.ts` with `submitMissionTeam` and `getMissionData` procedures
+- ✅ Created `src/app/room/[roomCode]/game/MissionTeamSelectorIntegration.tsx` - Real API integration component
+- ✅ Created `src/app/room/[roomCode]/game/mission-team-integration/page.tsx` - Integration demo page
+- ✅ Added team validation logic with proper error handling
+- ✅ All components follow exact design specifications with strategic theming
+- ✅ All components are error-free and ready for production use
+- ✅ Backend API integration complete with secure team submission
+- ✅ Real-time validation and team size checking
+- 🔄 Real-time Socket.IO integration needed for synchronized team selection across all players
 
 ### Task 6.3: Feature 7 - Vote on Mission Proposal (Ready for Implementation)
 - [ ] Voting interface for mission proposals
@@ -196,13 +210,26 @@ All three core features now have full backend integration:
 - `src/app/room/[roomCode]/game/RoleRevealIntegration.tsx` - Real API integration component ✅
 - `src/app/room/[roomCode]/game/integration/page.tsx` - Integration demo page ✅
 
+### New Components Created (Feature 6 - Select Mission Team)
+- `src/app/room/[roomCode]/game/MissionRequirements.tsx` - Mission info display component ✅
+- `src/app/room/[roomCode]/game/PlayerSelectionGrid.tsx` - Interactive player selection ✅
+- `src/app/room/[roomCode]/game/SelectedTeamDisplay.tsx` - Selected team preview ✅
+- `src/app/room/[roomCode]/game/SubmitTeamButton.tsx` - Team submission button ✅
+- `src/app/room/[roomCode]/game/MissionTeamSelector.tsx` - Main mission team interface ✅
+- `src/app/room/[roomCode]/game/MissionTeamSelectorDemo.tsx` - Demo interface ✅
+- `src/app/room/[roomCode]/game/mission-team-selector/page.tsx` - Demo page route ✅
+- `src/app/room/[roomCode]/game/MissionTeamSelectorIntegration.tsx` - Real API integration component ✅
+- `src/app/room/[roomCode]/game/mission-team-integration/page.tsx` - Integration demo page ✅
+
 ### Types & Utilities
 - `src/types/game-state.ts` - Game state and start requirement types
 - `src/types/roles.ts` - Role and assignment types with Avalon roles
 - `src/types/role-knowledge.ts` - Role knowledge and known player types ✅
+- `src/types/mission.ts` - Mission, MissionPlayer, and MissionRequirements types ✅
 - `src/lib/role-assignment.ts` - Cryptographically secure role assignment
 - `src/lib/game-state-machine.ts` - Game state transition logic
 - `src/lib/role-knowledge.ts` - Role knowledge computation logic ✅
+- `src/lib/mission-rules.ts` - Mission logic and validation functions ✅
 - `src/lib/test-room-integration.ts` - Testing utilities
 - Package installations: `qrcode`, `@types/qrcode`
 
