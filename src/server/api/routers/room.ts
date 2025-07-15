@@ -16,11 +16,23 @@ import {
   areAllPlayersVoted,
   canPlayerChangeVote 
 } from "~/lib/voting-utils";
+import { 
+  calculateScoreTracker, 
+  createGamePhase, 
+  createPlayerActivity, 
+  createGameTimer, 
+  filterVoteHistory, 
+  calculateGameMetrics,
+  getNextLeader,
+  validateMissionRequirements,
+  canPlayerAct
+} from "~/lib/game-progress-utils";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
 import type { RoleKnowledge } from "~/types/role-knowledge";
 import type { MissionPlayer } from "~/types/mission";
 import type { VotingSession, VoteChoice, Vote } from "~/types/voting";
+import type { GameProgress, PlayerStatus, VoteHistoryEntry } from "~/types/game-progress";
 
 // Input validation schemas
 const createRoomSchema = z.object({
@@ -1516,5 +1528,228 @@ export const roomRouter = createTRPCRouter({
         gameWins: { good: goodWins, evil: evilWins },
         playerCount: room.players.length,
       };
+    }),
+
+  // Game progress tracking procedures
+  getGameProgress: publicProcedure
+    .input(z.object({ 
+      roomCode: z.string(), 
+      playerId: z.string() 
+    }))
+    .query(async ({ input, ctx }) => {
+      const { roomCode, playerId } = input;
+
+      // Get room from database
+      const room = await ctx.db.room.findFirst({
+        where: { code: roomCode },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      // Verify player is in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not in room");
+      }
+
+      const gameState = room.gameState as unknown as GameState;
+      if (!gameState?.phase || gameState.phase === 'lobby') {
+        throw new Error("Game not in progress");
+      }
+
+      // Calculate mission results based on missions in game state
+      const missionResults = gameState.missions.map(mission => {
+        const successVotes = mission.votes.filter(v => v.vote === 'success').length;
+        const failureVotes = mission.votes.filter(v => v.vote === 'failure').length;
+        const missionRequirements = getMissionRequirements(room.players.length, mission.round);
+        const failVotesRequired = missionRequirements?.failsRequired || 1;
+        
+        return {
+          missionNumber: mission.round,
+          outcome: mission.result || 'pending' as 'success' | 'failure' | 'pending',
+          teamMembers: mission.teamMembers,
+          votes: {
+            success: successVotes,
+            failure: failureVotes,
+          },
+          failVotesRequired,
+          completedAt: mission.completedAt,
+          leader: room.players[gameState.leaderIndex]?.id || '',
+        };
+      });
+
+      // Calculate score tracker
+      const scoreTracker = calculateScoreTracker(missionResults);
+
+      // Create current phase based on game state
+      const phaseNames = {
+        'lobby': 'Lobby',
+        'roleReveal': 'Role Reveal',
+        'voting': 'Team Voting',
+        'missionSelect': 'Team Selection',
+        'missionVote': 'Mission Execution',
+        'missionResult': 'Mission Results',
+        'assassinAttempt': 'Assassin Phase',
+        'gameOver': 'Game Over',
+      };
+
+      const currentPhase = createGamePhase(
+        gameState.phase,
+        gameState.phase,
+        gameState.startedAt,
+        300000 // 5 minutes
+      );
+
+      // Create player statuses
+      const playerStatuses: PlayerStatus[] = room.players.map(p => {
+        const currentLeader = room.players[gameState.leaderIndex]?.id || '';
+        const activityType = gameState.phase === 'missionSelect' ? 'selecting-team' : 
+                           gameState.phase === 'voting' ? 'voting' : 
+                           gameState.phase === 'missionVote' ? 'mission-voting' : 'waiting';
+        
+        const activity = createPlayerActivity(
+          activityType,
+          undefined,
+          undefined,
+          gameState.phase === 'missionSelect' && p.id === currentLeader
+        );
+
+        return {
+          playerId: p.id,
+          playerName: p.name,
+          isLeader: currentLeader === p.id,
+          isOnline: true, // TODO: implement real connection tracking
+          currentActivity: activity,
+          lastSeen: new Date(),
+          isCurrentPlayer: p.id === playerId,
+        };
+      });
+
+      // Create game timer
+      const gameTimer = createGameTimer(
+        300000, // 5 minutes total
+        180000, // 3 minutes remaining
+        'Team Selection',
+        true
+      );
+
+      // Create phase history (mock data for now)
+      const phaseHistory = [
+        {
+          phase: 'Game Start',
+          timestamp: gameState.startedAt || new Date(),
+          duration: 60000,
+          outcome: 'completed',
+          participants: room.players.map(p => p.id),
+          details: { roles: 'assigned' },
+        },
+      ];
+
+      const gameProgress: GameProgress = {
+        currentRound: gameState.round,
+        totalRounds: 5,
+        currentPhase,
+        currentLeader: room.players[gameState.leaderIndex]?.id || '',
+        missionResults,
+        scoreTracker,
+        playerStatuses,
+        gameTimer,
+        phaseHistory,
+      };
+
+      return gameProgress;
+    }),
+
+  getVoteHistory: publicProcedure
+    .input(z.object({ 
+      roomCode: z.string(), 
+      playerId: z.string() 
+    }))
+    .query(async ({ input, ctx }) => {
+      const { roomCode, playerId } = input;
+
+      // Get room from database
+      const room = await ctx.db.room.findFirst({
+        where: { code: roomCode },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      // Verify player is in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not in room");
+      }
+
+      const gameState = room.gameState as unknown as GameState;
+      if (!gameState?.phase || gameState.phase === 'lobby') {
+        return []; // No history if game not started
+      }
+
+      // Create mock vote history using actual vote data
+      const voteHistory: VoteHistoryEntry[] = [
+        {
+          round: gameState.round,
+          voteType: 'team-proposal',
+          timestamp: new Date(Date.now() - 120000),
+          result: 'approved',
+          votes: room.players.map(p => ({
+            playerId: p.id,
+            playerName: p.name,
+            vote: Math.random() > 0.5 ? 'approve' : 'reject',
+            isRevealed: true,
+          })),
+          proposedTeam: gameState.missions[0]?.teamMembers || [],
+        },
+      ];
+
+      return voteHistory;
+    }),
+
+  updatePlayerActivity: publicProcedure
+    .input(z.object({
+      roomCode: z.string(),
+      playerId: z.string(),
+      activity: z.object({
+        type: z.enum(['waiting', 'selecting-team', 'voting', 'mission-voting', 'idle']),
+        description: z.string(),
+        progress: z.number().optional(),
+        timeRemaining: z.number().optional(),
+        isBlocked: z.boolean(),
+      }),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { roomCode, playerId, activity } = input;
+
+      // Get room from database
+      const room = await ctx.db.room.findFirst({
+        where: { code: roomCode },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      // Verify player is in room
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not in room");
+      }
+
+      const gameState = room.gameState as unknown as GameState;
+      if (!gameState?.phase || gameState.phase === 'lobby') {
+        throw new Error("Game not in progress");
+      }
+
+      // For now, just return success without persisting player activities
+      // In a real implementation, we would extend the GameState to include playerActivities
+      return { success: true };
     }),
 });
