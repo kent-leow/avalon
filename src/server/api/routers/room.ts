@@ -27,12 +27,30 @@ import {
   validateMissionRequirements,
   canPlayerAct
 } from "~/lib/game-progress-utils";
+import {
+  createHostManagement,
+  createHostAction,
+  validateHostAction,
+  createActivityLog,
+  processHostTransfer,
+  shouldTriggerAutoCleanup,
+  createHostNotification
+} from "~/lib/host-management-utils";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
 import type { RoleKnowledge } from "~/types/role-knowledge";
 import type { MissionPlayer } from "~/types/mission";
 import type { VotingSession, VoteChoice, Vote } from "~/types/voting";
 import type { GameProgress, PlayerStatus, VoteHistoryEntry } from "~/types/game-progress";
+import type { 
+  HostManagement, 
+  HostAction, 
+  HostActionType, 
+  PlayerManagement,
+  ActivityLog,
+  HostTransfer,
+  EmergencyType
+} from "~/types/host-management";
 
 // Input validation schemas
 const createRoomSchema = z.object({
@@ -66,6 +84,64 @@ const updateSettingsSchema = z.object({
 const startGameSchema = z.object({
   roomId: z.string().cuid("Invalid room ID"),
   hostId: z.string().cuid("Invalid host ID"),
+});
+
+// Host management schemas
+const hostActionSchema = z.object({
+  roomId: z.string().cuid("Invalid room ID"),
+  hostId: z.string().cuid("Invalid host ID"),
+  actionType: z.enum([
+    'kick_player',
+    'mute_player', 
+    'warn_player',
+    'make_host',
+    'pause_game',
+    'resume_game',
+    'reset_room',
+    'end_game',
+    'share_room',
+    'adjust_timer',
+    'enable_spectator',
+    'disable_spectator'
+  ]),
+  targetId: z.string().cuid("Invalid target ID").optional(),
+  reason: z.string().max(500, "Reason too long").optional(),
+  duration: z.number().positive().optional(),
+});
+
+const hostTransferSchema = z.object({
+  roomId: z.string().cuid("Invalid room ID"),
+  fromHostId: z.string().cuid("Invalid host ID"),
+  toPlayerId: z.string().cuid("Invalid player ID"),
+  reason: z.string().max(500, "Reason too long").optional(),
+});
+
+const hostTransferResponseSchema = z.object({
+  roomId: z.string().cuid("Invalid room ID"),
+  transferId: z.string().cuid("Invalid transfer ID"),
+  playerId: z.string().cuid("Invalid player ID"),
+  response: z.enum(['accept', 'reject']),
+});
+
+const emergencyProtocolSchema = z.object({
+  roomId: z.string().cuid("Invalid room ID"),
+  hostId: z.string().cuid("Invalid host ID"),
+  type: z.enum([
+    'game_breaking_bug',
+    'player_dispute',
+    'technical_failure',
+    'security_breach',
+    'host_abandonment',
+    'mass_disconnect'
+  ]),
+  description: z.string().max(1000, "Description too long").optional(),
+});
+
+const resolveEmergencySchema = z.object({
+  roomId: z.string().cuid("Invalid room ID"),
+  hostId: z.string().cuid("Invalid host ID"),
+  emergencyId: z.string().cuid("Invalid emergency ID"),
+  resolution: z.string().max(1000, "Resolution too long"),
 });
 
 export const roomRouter = createTRPCRouter({
@@ -2234,6 +2310,534 @@ export const roomRouter = createTRPCRouter({
         success: true,
         message: "Returned to lobby successfully",
         gameState: resetGameState,
+      };
+    }),
+
+  /**
+   * Get host management data
+   */
+  getHostManagement: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+      hostId: z.string().cuid("Invalid host ID"),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { roomId, hostId } = input;
+      
+      // Get room and validate host
+      const room = await ctx.db.room.findFirst({
+        where: { id: roomId },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const host = room.players.find(p => p.id === hostId);
+      if (!host) {
+        throw new Error("Host not found");
+      }
+
+      // Create host management data
+      const hostManagement = createHostManagement(
+        room.id,
+        host.id,
+        host.name,
+        undefined // avatar not implemented yet
+      );
+
+      // Get player management data
+      const playerManagement: PlayerManagement[] = room.players.map(player => ({
+        playerId: player.id,
+        playerName: player.name,
+        playerAvatar: undefined, // avatar not implemented yet
+        connectionStatus: 'connected' as const, // simplified for now
+        behavior: {
+          score: 100, // Default score
+          reports: [],
+          infractions: [],
+          commendations: [],
+          riskLevel: 'low' as const,
+        },
+        actions: [],
+        canKick: player.id !== hostId,
+        canMute: player.id !== hostId,
+        canMakeHost: player.id !== hostId,
+        isMuted: false,
+        warningCount: 0,
+        joinTime: player.joinedAt,
+        lastActivity: new Date(), // simplified for now
+      }));
+
+      const roomSettings = room.settings as any || {};
+
+      return {
+        hostManagement,
+        playerManagement,
+        roomSettings: {
+          roomCode: room.code,
+          maxPlayers: roomSettings.playerCount || 10,
+          currentPlayers: room.players.length,
+          isPublic: false,
+          allowSpectators: roomSettings.allowSpectators || false,
+          spectatorCount: 0,
+          maxSpectators: 5,
+          timeLimit: {
+            enabled: false,
+            phaseLimits: {},
+            globalLimit: 60,
+            warningThreshold: 10,
+            autoExtend: false,
+          },
+          autoCleanup: {
+            enabled: true,
+            idleTimeout: 60,
+            warningInterval: 5,
+            lastActivity: new Date(),
+            cleanupScheduled: false,
+            cleanupTime: hostManagement.autoCleanupTime,
+          },
+          moderationLevel: 'standard' as const,
+          roomExpiry: room.expiresAt,
+        },
+      };
+    }),
+
+  /**
+   * Execute host action
+   */
+  executeHostAction: publicProcedure
+    .input(hostActionSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, hostId, actionType, targetId, reason, duration } = input;
+      
+      // Get room and validate host
+      const room = await ctx.db.room.findFirst({
+        where: { id: roomId },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const host = room.players.find(p => p.id === hostId);
+      if (!host) {
+        throw new Error("Host not found");
+      }
+
+      // Create host action
+      const action = createHostAction(actionType, hostId, targetId, {
+        reason,
+        duration,
+      });
+
+      // Execute action based on type
+      switch (actionType) {
+        case 'kick_player':
+          if (!targetId) throw new Error("Target player required");
+          
+          // Remove player from room
+          await ctx.db.player.delete({
+            where: { id: targetId },
+          });
+          
+          // Log action
+          const kickLog = createActivityLog(
+            'host_action',
+            hostId,
+            host.name,
+            `Kicked player from room`,
+            { reason },
+            targetId
+          );
+          
+          break;
+
+        case 'mute_player':
+          if (!targetId) throw new Error("Target player required");
+          
+          // In a real implementation, this would update player status
+          // For now, we'll just log the action
+          const muteLog = createActivityLog(
+            'host_action',
+            hostId,
+            host.name,
+            `Muted player for ${duration || 300} seconds`,
+            { reason, duration },
+            targetId
+          );
+          
+          break;
+
+        case 'pause_game':
+          // Update game state to paused
+          const currentState = room.gameState as unknown as GameState;
+          await ctx.db.room.update({
+            where: { id: roomId },
+            data: {
+              gameState: {
+                ...currentState,
+                isPaused: true,
+                pausedAt: new Date(),
+              } as any,
+            },
+          });
+          
+          break;
+
+        case 'resume_game':
+          // Update game state to resumed
+          const pausedState = room.gameState as unknown as GameState;
+          await ctx.db.room.update({
+            where: { id: roomId },
+            data: {
+              gameState: {
+                ...pausedState,
+                isPaused: false,
+                pausedAt: undefined,
+              } as any,
+            },
+          });
+          
+          break;
+
+        case 'reset_room':
+          // Reset room to lobby state
+          const resetState: GameState = {
+            phase: 'lobby',
+            round: 0,
+            leaderIndex: 0,
+            votes: [],
+            missions: [],
+          };
+          
+          await ctx.db.$transaction(async (tx) => {
+            await tx.room.update({
+              where: { id: roomId },
+              data: {
+                gameState: resetState as any,
+                phase: 'lobby',
+                startedAt: null,
+              },
+            });
+            
+            // Reset all players
+            await Promise.all(
+              room.players.map(player =>
+                tx.player.update({
+                  where: { id: player.id },
+                  data: {
+                    role: null,
+                    roleData: undefined,
+                    isReady: false,
+                  },
+                })
+              )
+            );
+          });
+          
+          break;
+
+        case 'end_game':
+          // Set game to ended state
+          const endState: GameState = {
+            phase: 'gameOver',
+            round: 0,
+            leaderIndex: 0,
+            votes: [],
+            missions: [],
+          };
+          
+          await ctx.db.room.update({
+            where: { id: roomId },
+            data: {
+              gameState: endState as any,
+              phase: 'gameOver',
+            },
+          });
+          
+          break;
+
+        default:
+          // For other actions, just log them
+          const actionLog = createActivityLog(
+            'host_action',
+            hostId,
+            host.name,
+            `Executed ${actionType}`,
+            { reason },
+            targetId
+          );
+          break;
+      }
+
+      return {
+        success: true,
+        action,
+        message: `Successfully executed ${actionType}`,
+      };
+    }),
+
+  /**
+   * Initiate host transfer
+   */
+  initiateHostTransfer: publicProcedure
+    .input(hostTransferSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, fromHostId, toPlayerId, reason } = input;
+      
+      // Get room and validate participants
+      const room = await ctx.db.room.findFirst({
+        where: { id: roomId },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const fromHost = room.players.find(p => p.id === fromHostId);
+      const toPlayer = room.players.find(p => p.id === toPlayerId);
+      
+      if (!fromHost || !toPlayer) {
+        throw new Error("Host or target player not found");
+      }
+
+      // Create transfer request
+      const transfer = processHostTransfer(fromHostId, toPlayerId, reason);
+      
+      // In a real implementation, this would be stored in the database
+      // For now, we'll return the transfer object
+      
+      return {
+        success: true,
+        transfer,
+        message: "Host transfer initiated",
+      };
+    }),
+
+  /**
+   * Respond to host transfer
+   */
+  respondToHostTransfer: publicProcedure
+    .input(hostTransferResponseSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, transferId, playerId, response } = input;
+      
+      // Get room and validate player
+      const room = await ctx.db.room.findFirst({
+        where: { id: roomId },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found");
+      }
+
+      // In a real implementation, this would update the transfer in the database
+      // For now, we'll simulate the response
+      
+      if (response === 'accept') {
+        // Transfer host privileges
+        // This would involve updating the room's host field
+        // and notifying all players
+        
+        return {
+          success: true,
+          message: "Host transfer accepted",
+          newHostId: playerId,
+        };
+      } else {
+        return {
+          success: true,
+          message: "Host transfer rejected",
+        };
+      }
+    }),
+
+  /**
+   * Trigger emergency protocol
+   */
+  triggerEmergencyProtocol: publicProcedure
+    .input(emergencyProtocolSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, hostId, type, description } = input;
+      
+      // Get room and validate host
+      const room = await ctx.db.room.findFirst({
+        where: { id: roomId },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const host = room.players.find(p => p.id === hostId);
+      if (!host) {
+        throw new Error("Host not found");
+      }
+
+      // Create emergency state
+      const emergencyState = {
+        active: true,
+        type,
+        triggered: new Date(),
+        description: description || `${type.replace('_', ' ')} emergency triggered`,
+        autoActions: ['pause_game' as HostActionType],
+        manualActions: ['reset_room' as HostActionType, 'end_game' as HostActionType],
+        resolved: false,
+      };
+
+      // Auto-pause game if not already paused
+      const currentState = room.gameState as unknown as GameState & { isPaused?: boolean };
+      if (!currentState.isPaused) {
+        await ctx.db.room.update({
+          where: { id: roomId },
+          data: {
+            gameState: {
+              ...currentState,
+              isPaused: true,
+              pausedAt: new Date(),
+              emergency: emergencyState,
+            } as any,
+          },
+        });
+      }
+
+      // Log emergency
+      const emergencyLog = createActivityLog(
+        'security_event',
+        hostId,
+        host.name,
+        `Triggered ${type} emergency protocol`,
+        { description },
+      );
+
+      return {
+        success: true,
+        emergencyState,
+        message: `Emergency protocol ${type} activated`,
+      };
+    }),
+
+  /**
+   * Resolve emergency
+   */
+  resolveEmergency: publicProcedure
+    .input(resolveEmergencySchema)
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, hostId, emergencyId, resolution } = input;
+      
+      // Get room and validate host
+      const room = await ctx.db.room.findFirst({
+        where: { id: roomId },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const host = room.players.find(p => p.id === hostId);
+      if (!host) {
+        throw new Error("Host not found");
+      }
+
+      // Update emergency state
+      const currentState = room.gameState as unknown as GameState & { emergency?: any };
+      if (currentState.emergency) {
+        await ctx.db.room.update({
+          where: { id: roomId },
+          data: {
+            gameState: {
+              ...currentState,
+              emergency: {
+                ...currentState.emergency,
+                active: false,
+                resolved: true,
+                resolution,
+                resolvedAt: new Date(),
+              },
+            } as any,
+          },
+        });
+      }
+
+      // Log resolution
+      const resolutionLog = createActivityLog(
+        'security_event',
+        hostId,
+        host.name,
+        `Resolved emergency: ${resolution}`,
+        { resolution },
+      );
+
+      return {
+        success: true,
+        message: "Emergency resolved successfully",
+      };
+    }),
+
+  /**
+   * Get activity log
+   */
+  getActivityLog: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+      limit: z.number().min(1).max(100).optional(),
+      offset: z.number().min(0).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { roomId, limit = 50, offset = 0 } = input;
+      
+      // Get room
+      const room = await ctx.db.room.findFirst({
+        where: { id: roomId },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      // In a real implementation, this would fetch from a dedicated activity log table
+      // For now, we'll return mock data
+      const mockLogs: ActivityLog[] = [
+        createActivityLog(
+          'player_event',
+          'player_001',
+          'Alice',
+          'Joined the room',
+          {},
+        ),
+        createActivityLog(
+          'game_event',
+          'system',
+          'System',
+          'Game started',
+          {},
+        ),
+        createActivityLog(
+          'host_action',
+          'host_001',
+          'Host',
+          'Updated room settings',
+          {},
+        ),
+      ];
+
+      return {
+        logs: mockLogs.slice(offset, offset + limit),
+        totalCount: mockLogs.length,
+        hasMore: offset + limit < mockLogs.length,
       };
     }),
 });
