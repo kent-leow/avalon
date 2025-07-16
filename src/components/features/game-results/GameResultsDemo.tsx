@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { GameResultsScreen } from '~/components/features/game-results/GameResultsScreen';
 import type { GameResults } from '~/types/game-results';

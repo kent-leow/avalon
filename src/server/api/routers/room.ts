@@ -1287,7 +1287,7 @@ export const roomRouter = createTRPCRouter({
         },
         progress,
         rejectionTracker,
-        currentPlayerVote: currentPlayerVote?.choice as VoteChoice,
+        currentPlayerVote: currentPlayerVote?.choice!,
         canChangeVote,
         timeRemaining,
         isRevealing: !!gameState.votingResult,
@@ -1343,7 +1343,7 @@ export const roomRouter = createTRPCRouter({
       }
       
       // Validate role constraints (good players can't vote for failure)
-      const playerRole = gameState.assignedRoles?.[playerId] as string;
+      const playerRole = gameState.assignedRoles?.[playerId]!;
       if (playerRole && !['mordred', 'assassin', 'morgana', 'oberon'].includes(playerRole) && vote === 'failure') {
         throw new Error("Good players cannot vote for mission failure");
       }
@@ -1489,7 +1489,7 @@ export const roomRouter = createTRPCRouter({
       const evilWins = missionOutcomes.filter(o => o === 'failure').length;
       
       // Get player role
-      const playerRole = gameState.assignedRoles?.[playerId] as string;
+      const playerRole = gameState.assignedRoles?.[playerId]!;
       const isEvilRole = playerRole && ['mordred', 'assassin', 'morgana', 'oberon'].includes(playerRole);
       
       // Check if player has voted

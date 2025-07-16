@@ -154,12 +154,12 @@ export function JoinRoomForm({
             <PlayerNameInput
               value={playerName}
               onChange={setPlayerName}
-              error={error && error.includes('name') ? error : ''}
+              error={error?.includes('name') ? error : ''}
               disabled={joinRoomMutation.isPending}
             />
 
             {/* General Error */}
-            {error && !error.includes('name') && (
+            {error && !error?.includes('name') && (
               <div className="text-red-500 text-sm font-medium bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                 {error}
               </div>
@@ -185,7 +185,7 @@ export function JoinRoomForm({
           {roomCode && (
             <div className="text-sm text-slate-300 opacity-75 bg-[#1a1a2e] rounded-lg p-3">
               <p className="font-mono text-lg mb-1">{roomCode}</p>
-              <p>You're joining this room</p>
+              <p>You&apos;re joining this room</p>
             </div>
           )}
         </div>

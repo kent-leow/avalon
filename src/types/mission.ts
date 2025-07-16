@@ -41,12 +41,10 @@ export interface MissionValidation {
 export interface MissionRules {
   playerCounts: Record<number, number[]>; // playerCount -> [mission1, mission2, mission3, mission4, mission5]
   failsRequired: Record<number, number[]>; // playerCount -> [mission1, mission2, mission3, mission4, mission5]
-  specialRules: {
-    [key: string]: {
+  specialRules: Record<string, {
       rounds: number[];
       description: string;
-    };
-  };
+    }>;
 }
 
 export interface PlayerSelectionState {

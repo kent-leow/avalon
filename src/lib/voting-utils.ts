@@ -179,7 +179,7 @@ export function calculateTimeRemaining(deadline: Date): number {
  */
 export function isDeadlineApproaching(
   deadline: Date,
-  urgentThreshold: number = 10
+  urgentThreshold = 10
 ): boolean {
   const timeRemaining = calculateTimeRemaining(deadline);
   return timeRemaining <= urgentThreshold && timeRemaining > 0;
@@ -240,7 +240,7 @@ export function getVotingResultMessage(
 export function createMockVotingSession(
   missionId: string,
   proposedTeam: string[],
-  proposalNumber: number = 1
+  proposalNumber = 1
 ): VotingSession {
   const now = new Date();
   const deadline = new Date(now.getTime() + (VOTING_CONFIG.VOTING_DEADLINE_SECONDS * 1000));

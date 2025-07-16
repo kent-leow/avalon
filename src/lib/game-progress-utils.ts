@@ -37,7 +37,7 @@ export function createGamePhase(
  */
 export function calculateScoreTracker(
   missionResults: MissionResult[],
-  totalMissions: number = 5
+  totalMissions = 5
 ): ScoreTracker {
   const goodTeamWins = missionResults.filter(m => m.outcome === 'success').length;
   const evilTeamWins = missionResults.filter(m => m.outcome === 'failure').length;
@@ -88,7 +88,7 @@ export function createGameTimer(
   totalTime: number,
   remainingTime: number,
   label: string,
-  isActive: boolean = true
+  isActive = true
 ): GameTimer {
   return {
     totalTime,

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from 'react';
 import MissionExecutionScreen from './MissionExecutionScreen';
 import { createMissionVoteOptions, createMissionContext, createMissionTeamMembers, calculateVotingProgress, calculateMissionResult } from '~/lib/mission-execution-utils';

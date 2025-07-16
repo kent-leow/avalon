@@ -1,3 +1,5 @@
+'use client';
+
 import { CreateRoomForm } from './CreateRoomForm';
 import { type Room } from '~/types/room';
 

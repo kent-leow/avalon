@@ -114,8 +114,8 @@ export class GameStateMachine {
    */
   static canStartGame(
     playerCount: number,
-    minPlayers: number = 5,
-    maxPlayers: number = 10
+    minPlayers = 5,
+    maxPlayers = 10
   ): { canStart: boolean; errors: string[] } {
     const errors: string[] = [];
 

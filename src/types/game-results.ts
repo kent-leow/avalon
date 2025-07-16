@@ -300,7 +300,7 @@ export interface FinalScore {
   evilPoints: number;
   
   /** Bonus points */
-  bonusPoints: { [playerId: string]: number };
+  bonusPoints: Record<string, number>;
   
   /** Score breakdown */
   breakdown: ScoreBreakdown;
@@ -325,7 +325,7 @@ export interface RolePerformance {
   effectiveness: number;
   
   /** Role-specific metrics */
-  metrics: { [key: string]: number };
+  metrics: Record<string, number>;
   
   /** Key achievements */
   achievements: string[];
