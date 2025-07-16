@@ -1,12 +1,16 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { CreateRoomForm } from './CreateRoomForm';
 import { type Room } from '~/types/room';
 
 export default function CreateRoomPage() {
+  const router = useRouter();
+
   const handleRoomCreated = (room: Room) => {
     console.log('Room created:', room);
-    // TODO: Navigate to room lobby or handle success
+    // Navigate to the room lobby
+    router.push(`/room/${room.code}/lobby`);
   };
 
   return (
