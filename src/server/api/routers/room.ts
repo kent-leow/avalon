@@ -1752,4 +1752,488 @@ export const roomRouter = createTRPCRouter({
       // In a real implementation, we would extend the GameState to include playerActivities
       return { success: true };
     }),
+
+  // Assassin Attempt Procedures
+  getAssassinAttemptData: publicProcedure
+    .input(z.object({
+      roomCode: z.string(),
+      playerId: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      const { roomCode, playerId } = input;
+
+      // Get room from database
+      const room = await ctx.db.room.findFirst({
+        where: { code: roomCode },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const gameState = room.gameState as unknown as GameState;
+      if (!gameState?.phase || gameState.phase !== 'assassinAttempt') {
+        throw new Error("Game not in assassination phase");
+      }
+
+      // Verify player is the assassin
+      const player = room.players.find(p => p.id === playerId);
+      if (!player || player.role !== 'assassin') {
+        throw new Error("Only the assassin can access this data");
+      }
+
+      // Get all players except the assassin as targets
+      const targets = room.players
+        .filter(p => p.id !== playerId)
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          avatar: '👤', // Default avatar since avatar doesn't exist in schema
+          actualRole: p.role || 'unknown',
+          isMerlin: p.role === 'merlin',
+        }));
+
+      // Generate mock strategic information
+      // In a real implementation, this would be computed from game history
+      const strategicInfo = {
+        missionTimeline: gameState.missions?.map((mission, index) => ({
+          missionNumber: index + 1,
+          result: mission.result || 'pending',
+          teamMembers: mission.teamMembers || [],
+          voteResults: [], // Would be populated from actual vote data
+          keyEvents: [`Mission ${index + 1} ${mission.result || 'pending'}`],
+        })) || [],
+        votingPatterns: targets.map(target => ({
+          playerId: target.id,
+          consistency: 0.7,
+          approvalTendency: 0.6,
+          goodAlignment: target.isMerlin ? 0.9 : 0.5,
+        })),
+        teamCompositions: [],
+        behavioralInsights: [],
+        merlinClues: targets.filter(t => t.isMerlin).map(target => ({
+          type: 'voting-knowledge' as const,
+          description: 'Showed strategic voting patterns',
+          suspectedPlayers: [target.id],
+          confidence: 0.8,
+          evidence: ['Consistent strategic voting', 'Subtle team guidance'],
+        })),
+      };
+
+      return {
+        assassin: {
+          id: player.id,
+          name: player.name,
+          avatar: '🗡️', // Default avatar since avatar doesn't exist in schema
+          role: 'assassin' as const,
+          hasDecided: false,
+        },
+        targets,
+        strategicInfo,
+        gameContext: {
+          round: gameState.round || 1,
+          missionResults: gameState.missions?.map(m => m.result).filter(Boolean) || [],
+          goodWins: gameState.missions?.filter(m => m.result === 'success').length || 0,
+          evilWins: gameState.missions?.filter(m => m.result === 'failure').length || 0,
+          totalPlayers: room.players.length,
+          gameDuration: Date.now() - (room.createdAt?.getTime() || 0),
+          currentLeader: room.hostId, // Use hostId as fallback
+        },
+      };
+    }),
+
+  submitAssassinAttempt: publicProcedure
+    .input(z.object({
+      roomCode: z.string(),
+      playerId: z.string(),
+      targetId: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { roomCode, playerId, targetId } = input;
+
+      // Get room from database
+      const room = await ctx.db.room.findFirst({
+        where: { code: roomCode },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const gameState = room.gameState as unknown as GameState;
+      if (!gameState?.phase || gameState.phase !== 'assassinAttempt') {
+        throw new Error("Game not in assassination phase");
+      }
+
+      // Verify player is the assassin
+      const assassin = room.players.find(p => p.id === playerId);
+      if (!assassin || assassin.role !== 'assassin') {
+        throw new Error("Only the assassin can make this attempt");
+      }
+
+      // Verify target is valid
+      const target = room.players.find(p => p.id === targetId);
+      if (!target || target.id === playerId) {
+        throw new Error("Invalid target selected");
+      }
+
+      // Process assassination attempt
+      const wasCorrect = target.role === 'merlin';
+      const gameOutcome = wasCorrect ? 'evil-wins' : 'good-wins';
+
+      // Update game state
+      const updatedGameState: GameState = {
+        ...gameState,
+        phase: 'gameOver',
+        assassinAttempt: {
+          assassinId: playerId,
+          targetId,
+          wasCorrect,
+          gameOutcome,
+          timestamp: new Date(),
+        } as any,
+      };
+
+      // Update room in database
+      await ctx.db.room.update({
+        where: { id: room.id },
+        data: {
+          gameState: updatedGameState as any,
+          updatedAt: new Date(),
+        },
+      });
+
+      return {
+        targetId,
+        wasCorrect,
+        gameOutcome,
+        timestamp: new Date(),
+        decisionDuration: 0, // Would be calculated from start time
+        revealSequence: {
+          stages: [
+            {
+              type: 'pause',
+              duration: 3000,
+              description: 'Dramatic pause before reveal',
+              effects: ['heartbeat', 'screen-darken'],
+              isActive: true,
+            },
+            {
+              type: 'target-reveal',
+              duration: 2000,
+              description: 'Reveal selected target',
+              effects: ['spotlight', 'target-highlight'],
+              isActive: false,
+            },
+            {
+              type: 'role-reveal',
+              duration: 2000,
+              description: 'Reveal target\'s true role',
+              effects: ['card-flip', 'role-glow'],
+              isActive: false,
+            },
+            {
+              type: 'outcome-reveal',
+              duration: 2000,
+              description: 'Reveal game outcome',
+              effects: ['outcome-flash', 'dramatic-text'],
+              isActive: false,
+            },
+            {
+              type: 'celebration',
+              duration: 2000,
+              description: wasCorrect ? 'Evil team celebration' : 'Good team celebration',
+              effects: wasCorrect ? ['dark-victory', 'evil-laugh'] : ['holy-light', 'good-cheer'],
+              isActive: false,
+            },
+          ],
+          currentStage: 0,
+          isComplete: false,
+          duration: 11000,
+        },
+      };
+    }),
+
+  /**
+   * Get game results for a completed game
+   */
+  getGameResults: publicProcedure
+    .input(z.object({
+      roomCode: z.string().min(1, "Room code is required"),
+      gameId: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { roomCode } = input;
+      
+      // Get room from database
+      const room = await ctx.db.room.findFirst({
+        where: { code: roomCode },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      const gameState = room.gameState as unknown as GameState;
+      if (!gameState?.phase || gameState.phase !== 'gameOver') {
+        throw new Error("Game is not completed yet");
+      }
+
+      // Mock game results for now - in real implementation, this would be calculated
+      // from the actual game data stored in the database
+      const gameResults: any = {
+        outcome: {
+          winner: gameState.assassinAttempt?.success ? 'evil' : 'good',
+          winCondition: gameState.assassinAttempt?.success ? 'assassin-success' : 'assassin-failure',
+          description: gameState.assassinAttempt?.success 
+            ? 'Evil triumphs! The assassin successfully eliminated Merlin.'
+            : 'Good triumphs! The assassin failed to identify Merlin.',
+          keyMoments: [],
+          margin: 'close',
+          finalScore: {
+            goodPoints: gameState.assassinAttempt?.success ? 0 : 3,
+            evilPoints: gameState.assassinAttempt?.success ? 3 : 0,
+            bonusPoints: {},
+            breakdown: {
+              missionPoints: 3,
+              rolePoints: 0,
+              votingPoints: 0,
+              bonusPoints: 0,
+            },
+          },
+        },
+        playerRoles: room.players.map(player => ({
+          playerId: player.id,
+          playerName: player.name,
+          avatar: '🎭', // Default avatar since player doesn't have avatar field
+          role: player.role || 'loyal-servant',
+          team: ['merlin', 'percival', 'loyal-servant'].includes(player.role || '') ? 'good' : 'evil',
+          description: `Player role: ${player.role}`,
+          roleData: {},
+          rolePerformance: {
+            effectiveness: Math.floor(Math.random() * 40) + 60, // 60-100
+            metrics: {},
+            achievements: [],
+            mistakes: [],
+          },
+          survivalStatus: 'alive',
+          performance: 'good',
+        })),
+        gameSummary: {
+          duration: 1200,
+          totalRounds: 8,
+          missionResults: [],
+          voteRounds: [],
+          assassinAttempt: gameState.assassinAttempt ? {
+            assassin: gameState.assassinAttempt.assassinId,
+            target: gameState.assassinAttempt.targetId,
+            wasCorrect: gameState.assassinAttempt.success,
+            decisionTime: 45,
+            finalOutcome: gameState.assassinAttempt.success ? 'evil-wins' : 'good-wins',
+          } : undefined,
+          criticalEvents: [],
+          phaseTimeline: [],
+        },
+        voteHistory: [],
+        teamCompositions: [],
+        statistics: {
+          overall: {
+            totalVotes: 0,
+            totalMissions: 0,
+            averageMissionDuration: 0,
+            approvalRate: 0,
+            missionSuccessRate: 0,
+          },
+          teamPerformance: {
+            goodTeam: {
+              size: 0,
+              winRate: 0,
+              averagePerformance: 0,
+              strengths: [],
+              weaknesses: [],
+            },
+            evilTeam: {
+              size: 0,
+              winRate: 0,
+              averagePerformance: 0,
+              strengths: [],
+              weaknesses: [],
+            },
+            comparison: {
+              performanceDifference: 0,
+              strategyComparison: '',
+              keyDifferentiators: [],
+            },
+          },
+          votingStats: {
+            totalRounds: 0,
+            averageVotesPerRound: 0,
+            rejectionRate: 0,
+            patterns: [],
+          },
+          missionStats: {
+            successRate: 0,
+            averageTeamSize: 0,
+            mostSuccessfulPlayers: [],
+            difficultyRatings: [],
+          },
+          deceptionMetrics: {
+            successfulDeceptions: 0,
+            failedDeceptions: 0,
+            deceptionSuccessRate: 0,
+            topDeceivers: [],
+          },
+          strategicInsights: [],
+        },
+        playerPerformance: [],
+        achievements: [],
+        gameMetadata: {
+          gameId: room.id,
+          roomCode: room.code,
+          startTime: room.startedAt || new Date(),
+          endTime: new Date(),
+          playerCount: room.players.length,
+          settings: room.settings,
+          version: '1.0.0',
+          shareToken: room.code,
+        },
+      };
+
+      return gameResults;
+    }),
+
+  /**
+   * Reset game to lobby state
+   */
+  resetGame: publicProcedure
+    .input(z.object({
+      roomCode: z.string().min(1, "Room code is required"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { roomCode } = input;
+      
+      // Get room from database
+      const room = await ctx.db.room.findFirst({
+        where: { code: roomCode },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      // Reset game state
+      const resetGameState: GameState = {
+        phase: 'lobby',
+        round: 0,
+        leaderIndex: 0,
+        startedAt: undefined,
+        votes: [],
+        missions: [],
+        assassinAttempt: undefined,
+      };
+
+      // Update room and reset players
+      await ctx.db.$transaction(async (tx) => {
+        // Update room
+        await tx.room.update({
+          where: { id: room.id },
+          data: {
+            gameState: resetGameState as any,
+            phase: 'lobby',
+            startedAt: null,
+            updatedAt: new Date(),
+          },
+        });
+
+        // Reset all players
+        await Promise.all(
+          room.players.map(player =>
+            tx.player.update({
+              where: { id: player.id },
+              data: {
+                role: null,
+                roleData: undefined,
+                isReady: false,
+              },
+            })
+          )
+        );
+      });
+
+      return {
+        success: true,
+        message: "Game reset successfully",
+        gameState: resetGameState,
+      };
+    }),
+
+  /**
+   * Return to lobby (same as reset but with different messaging)
+   */
+  returnToLobby: publicProcedure
+    .input(z.object({
+      roomCode: z.string().min(1, "Room code is required"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { roomCode } = input;
+      
+      // Get room from database
+      const room = await ctx.db.room.findFirst({
+        where: { code: roomCode },
+        include: { players: true },
+      });
+
+      if (!room) {
+        throw new Error("Room not found");
+      }
+
+      // Reset game state (same as resetGame)
+      const resetGameState: GameState = {
+        phase: 'lobby',
+        round: 0,
+        leaderIndex: 0,
+        startedAt: undefined,
+        votes: [],
+        missions: [],
+        assassinAttempt: undefined,
+      };
+
+      // Update room and reset players
+      await ctx.db.$transaction(async (tx) => {
+        // Update room
+        await tx.room.update({
+          where: { id: room.id },
+          data: {
+            gameState: resetGameState as any,
+            phase: 'lobby',
+            startedAt: null,
+            updatedAt: new Date(),
+          },
+        });
+
+        // Reset all players
+        await Promise.all(
+          room.players.map(player =>
+            tx.player.update({
+              where: { id: player.id },
+              data: {
+                role: null,
+                roleData: undefined,
+                isReady: false,
+              },
+            })
+          )
+        );
+      });
+
+      return {
+        success: true,
+        message: "Returned to lobby successfully",
+        gameState: resetGameState,
+      };
+    }),
 });
