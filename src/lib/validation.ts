@@ -234,10 +234,6 @@ export class ValidationError extends Error {
 }
 
 // Security validation helpers
-export function validateCSRFToken(token: string, expectedToken: string): boolean {
-  return token === expectedToken && token.length > 0;
-}
-
 export function validateTimestamp(timestamp: number, toleranceMs: number = 60000): boolean {
   const now = Date.now();
   return timestamp >= (now - toleranceMs) && timestamp <= (now + toleranceMs);

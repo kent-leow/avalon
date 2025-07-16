@@ -9,7 +9,6 @@ import SuperJSON from "superjson";
 
 import { type AppRouter } from "~/server/api/root";
 import { createQueryClient } from "./query-client";
-import { getCSRFTokenFromMeta } from "~/hooks/useCSRFToken";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {
@@ -56,12 +55,6 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           headers: async () => {
             const headers = new Headers();
             headers.set("x-trpc-source", "nextjs-react");
-            
-            // Add CSRF token if available
-            const csrfToken = getCSRFTokenFromMeta();
-            if (csrfToken) {
-              headers.set("x-csrf-token", csrfToken);
-            }
             
             return headers;
           },

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from './lib/auth';
 import { rateLimitByIP, RATE_LIMIT_CONFIGS, RateLimitError } from './lib/rate-limit';
-import { createCSRFMiddleware, skipCSRFForRoute } from './lib/csrf';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -28,24 +27,6 @@ export async function middleware(request: NextRequest) {
           'X-RateLimit-Reset': rateLimitResult.reset.toString(),
         },
       });
-    }
-    
-    // Apply CSRF protection for API routes (except tRPC in development)
-    if (pathname.startsWith('/api') && !skipCSRFForRoute(pathname)) {
-      try {
-        const csrfMiddleware = createCSRFMiddleware();
-        await csrfMiddleware(request);
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('CSRF')) {
-          return new NextResponse('CSRF token validation failed', {
-            status: 403,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-        }
-        throw error;
-      }
     }
     
     // Protect room routes with authentication
@@ -107,12 +88,6 @@ export async function middleware(request: NextRequest) {
           'X-RateLimit-Remaining': error.remaining.toString(),
           'X-RateLimit-Reset': error.reset.toString(),
         },
-      });
-    }
-    
-    if (error instanceof Error && error.message.includes('CSRF')) {
-      return new NextResponse('CSRF token validation failed', {
-        status: 403,
       });
     }
     
