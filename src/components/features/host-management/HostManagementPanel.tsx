@@ -197,10 +197,18 @@ export default function HostManagementPanel({
 // Quick Actions Tab Component
 function QuickActionsTab({ hostManagement }: { hostManagement: HostManagement }) {
   const quickActions = [
-    { id: 'share_room', label: 'Share Room', icon: '🔗', color: 'bg-blue-500', action: () => {} },
-    { id: 'pause_game', label: 'Pause Game', icon: '⏸️', color: 'bg-yellow-500', action: () => {} },
-    { id: 'reset_room', label: 'Reset Room', icon: '🔄', color: 'bg-orange-500', action: () => {} },
-    { id: 'end_game', label: 'End Game', icon: '🛑', color: 'bg-red-500', action: () => {} }
+    { id: 'share_room', label: 'Share Room', icon: '🔗', color: 'bg-blue-500', action: () => {
+      // TODO: Implement share room
+    } },
+    { id: 'pause_game', label: 'Pause Game', icon: '⏸️', color: 'bg-yellow-500', action: () => {
+      // TODO: Implement pause game
+    } },
+    { id: 'reset_room', label: 'Reset Room', icon: '🔄', color: 'bg-orange-500', action: () => {
+      // TODO: Implement reset room
+    } },
+    { id: 'end_game', label: 'End Game', icon: '🛑', color: 'bg-red-500', action: () => {
+      // TODO: Implement end game
+    } }
   ];
 
   return (
