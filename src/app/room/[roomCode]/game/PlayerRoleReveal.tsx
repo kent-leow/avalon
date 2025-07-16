@@ -187,7 +187,7 @@ export function PlayerRoleReveal({ playerRoles, revealDelay = 1000, onComplete }
                   
                   {isRevealed && (
                     <div className="mt-2 text-xs text-gray-400">
-                      {getRoleDescription(player.character)}
+                      {getRoleDescription(player.role)}
                     </div>
                   )}
                 </div>
@@ -240,8 +240,8 @@ export function PlayerRoleReveal({ playerRoles, revealDelay = 1000, onComplete }
                         </h4>
                         {isRevealed && (
                           <p className="text-sm text-red-400 flex items-center space-x-1">
-                            <span>{CHARACTER_EMOJI[player.character] || '❓'}</span>
-                            <span>{player.character}</span>
+                            <span>{CHARACTER_EMOJI[player.role] || '❓'}</span>
+                            <span>{player.role}</span>
                           </p>
                         )}
                       </div>
@@ -261,7 +261,7 @@ export function PlayerRoleReveal({ playerRoles, revealDelay = 1000, onComplete }
                   
                   {isRevealed && (
                     <div className="mt-2 text-xs text-gray-400">
-                      {getRoleDescription(player.character)}
+                      {getRoleDescription(player.role)}
                     </div>
                   )}
                 </div>
@@ -293,7 +293,7 @@ export function PlayerRoleReveal({ playerRoles, revealDelay = 1000, onComplete }
               <p className={`text-lg font-medium ${
                 selectedPlayer.team === 'good' ? 'text-green-400' : 'text-red-400'
               }`}>
-                {CHARACTER_EMOJI[selectedPlayer.character] || '❓'} {selectedPlayer.character}
+                {CHARACTER_EMOJI[selectedPlayer.role] || '❓'} {selectedPlayer.role}
               </p>
             </div>
             
@@ -301,7 +301,7 @@ export function PlayerRoleReveal({ playerRoles, revealDelay = 1000, onComplete }
               <div className="bg-gray-900/50 p-4 rounded-lg">
                 <h4 className="font-medium text-gray-300 mb-2">Role Description</h4>
                 <p className="text-sm text-gray-400">
-                  {getRoleDescription(selectedPlayer.character)}
+                  {getRoleDescription(selectedPlayer.role)}
                 </p>
               </div>
               
