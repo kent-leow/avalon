@@ -69,7 +69,7 @@ export function calculateVotingProgress(
   return {
     votesSubmitted,
     totalVotes,
-    percentageComplete: Math.round((votesSubmitted / totalVotes) * 100),
+    percentageComplete: totalVotes === 0 ? 0 : Math.round((votesSubmitted / totalVotes) * 100),
     timeRemaining,
     isComplete: votesSubmitted >= totalVotes
   };

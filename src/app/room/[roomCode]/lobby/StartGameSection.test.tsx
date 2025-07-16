@@ -69,16 +69,12 @@ describe('StartGameSection Integration', () => {
     jest.clearAllMocks();
   });
 
-  it('renders with real tRPC integration', () => {
-    render(
-      <StartGameSection
-        roomId="test-room"
-        roomCode="TEST123"
-      />
-    );
+  it('renders with real tRPC integration', async () => {
+    render(<StartGameSection roomId="test-room" roomCode="TEST123" />);
 
-    expect(screen.getByText('Start Game')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Start Game' })).toBeInTheDocument();
     expect(screen.getByText('Complete the requirements below to begin your Avalon adventure')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument();
   });
 
   it('displays pre-start checklist', () => {
