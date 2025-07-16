@@ -777,7 +777,39 @@ The application is now production-ready with:
 
 ## Bug Fixes and Improvements
 
-### Room Creation Bug Fix - COMPLETED ✅
+### Room Creation Redirect Bug Fix - COMPLETED ✅
+
+#### Issue
+- Host didn't get redirected to the lobby after clicking "Create Room"
+- CreateRoomForm was showing RoomCodeDisplay instead of triggering redirect
+- onRoomCreated callback wasn't being called due to component state management
+
+#### Solution Implemented
+1. **Fixed CreateRoomForm Component** (`/src/app/create-room/CreateRoomForm.tsx`):
+   - Removed `createdRoom` state that was preventing redirect
+   - Removed conditional rendering of RoomCodeDisplay
+   - Removed unused RoomCodeDisplay import
+   - Fixed onSuccess callback to immediately trigger redirect after session creation
+
+2. **Maintained Session Management**:
+   - Session creation and validation logic remains intact
+   - requestAnimationFrame ensures session is saved before redirect
+   - Error handling for session creation failures preserved
+
+#### Files Modified
+- `/src/app/create-room/CreateRoomForm.tsx` - Removed blocking state, enabled redirect flow
+
+#### Testing
+- ✅ TypeScript compilation successful
+- ✅ Lint checks passing
+- ✅ Host correctly redirected to lobby after room creation
+- ✅ Session management working properly
+- ✅ No breaking changes to existing functionality
+
+#### Result
+Room creation now properly redirects the host to the lobby after successful room creation, fixing the user experience flow.
+
+### Previous Room Creation Bug Fix - COMPLETED ✅
 
 #### Issue
 - Host would be redirected back to the landing page after creating a room instead of staying in the room lobby

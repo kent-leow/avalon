@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { RoomCodeDisplay } from './RoomCodeDisplay';
 import { generateJoinUrl } from '~/lib/room-code-generator';
 import { createSession, getSession } from '~/lib/session';
 import { api } from '~/trpc/react';
@@ -14,20 +13,10 @@ interface CreateRoomFormProps {
 
 export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomFormProps) {
   const [hostName, setHostName] = useState('');
-  const [createdRoom, setCreatedRoom] = useState<{
-    id: string;
-    code: string;
-    joinUrl: string;
-    hostId: string;
-    expiresAt: Date;
-    sessionId: string;
-  } | null>(null);
   const [error, setError] = useState<string>('');
 
   const createRoomMutation = api.room.createRoom.useMutation({
     onSuccess: async (data) => {
-      setCreatedRoom(data);
-      
       // Create session for the host
       const session = createSession(hostName, data.id);
       
@@ -102,16 +91,6 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
       hostName: hostName.trim(),
     });
   };
-
-  if (createdRoom) {
-    return (
-      <RoomCodeDisplay
-        roomCode={createdRoom.code}
-        joinUrl={createdRoom.joinUrl}
-        className={className}
-      />
-    );
-  }
 
   return (
     <div className={`bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8 shadow-xl ${className}`} data-testid="create-room-form">
