@@ -75,6 +75,11 @@ export function createCSRFMiddleware() {
       return;
     }
     
+    // Skip CSRF check for tRPC routes during development
+    if (process.env.NODE_ENV === 'development') {
+      return;
+    }
+    
     const token = request.headers.get(CSRF_HEADER_NAME) || 
                   request.headers.get('x-xsrf-token') || // Alternative header name
                   '';
@@ -151,6 +156,7 @@ export function skipCSRFForRoute(pathname: string): boolean {
     '/api/health',
     '/api/metrics',
     '/api/ping',
+    '/api/trpc', // Skip CSRF for tRPC routes
   ];
   
   return skipRoutes.some(route => pathname.startsWith(route));

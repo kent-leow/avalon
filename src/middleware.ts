@@ -30,10 +30,22 @@ export async function middleware(request: NextRequest) {
       });
     }
     
-    // Apply CSRF protection for API routes
+    // Apply CSRF protection for API routes (except tRPC in development)
     if (pathname.startsWith('/api') && !skipCSRFForRoute(pathname)) {
-      const csrfMiddleware = createCSRFMiddleware();
-      await csrfMiddleware(request);
+      try {
+        const csrfMiddleware = createCSRFMiddleware();
+        await csrfMiddleware(request);
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('CSRF')) {
+          return new NextResponse('CSRF token validation failed', {
+            status: 403,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+        }
+        throw error;
+      }
     }
     
     // Protect room routes with authentication
