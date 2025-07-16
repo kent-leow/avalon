@@ -9,21 +9,6 @@ export interface CSRFTokenData {
   timestamp: number;
 }
 
-export async function generateCSRFToken(): Promise<string> {
-  const token = randomBytes(32).toString('hex');
-  const cookieStore = await cookies();
-  
-  cookieStore.set(CSRF_TOKEN_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    path: '/',
-  });
-  
-  return token;
-}
-
 export async function verifyCSRFToken(providedToken: string): Promise<boolean> {
   const cookieStore = await cookies();
   const storedToken = cookieStore.get(CSRF_TOKEN_NAME)?.value;
