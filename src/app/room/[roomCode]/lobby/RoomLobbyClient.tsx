@@ -14,21 +14,37 @@ interface RoomLobbyClientProps {
 export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   const router = useRouter();
   const [session, setSession] = useState<PlayerSession | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
-    const currentSession = getSession();
-    if (!currentSession) {
-      // Redirect back to join form if no session
-      router.push(`/room/${roomCode}`);
-      return;
-    }
-    setSession(currentSession);
+    const checkSession = () => {
+      const currentSession = getSession();
+      
+      if (!currentSession) {
+        // Give a brief delay to allow session to be created
+        setTimeout(() => {
+          const retrySession = getSession();
+          
+          if (!retrySession) {
+            router.push(`/room/${roomCode}`);
+            return;
+          }
+          setSession(retrySession);
+          setSessionChecked(true);
+        }, 200);
+        return;
+      }
+      setSession(currentSession);
+      setSessionChecked(true);
+    };
+
+    checkSession();
   }, [roomCode, router]);
 
   const { data: roomData, isLoading, error } = api.room.getRoomInfo.useQuery(
     { roomCode },
     { 
-      enabled: !!roomCode,
+      enabled: !!roomCode && sessionChecked,
       refetchInterval: 2000, // Poll every 2 seconds for real-time updates
     }
   );
@@ -36,7 +52,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   // Check if current player is host
   const isHost = session && roomData?.players?.find((p: any) => p.name === session.name)?.isHost;
 
-  if (isLoading) {
+  if (!sessionChecked || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">
         <div className="text-center">

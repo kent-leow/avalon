@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { RoomCodeDisplay } from './RoomCodeDisplay';
 import { generateJoinUrl } from '~/lib/room-code-generator';
-import { createSession } from '~/lib/session';
+import { createSession, getSession } from '~/lib/session';
 import { api } from '~/trpc/react';
 import { type Room } from '~/types/room';
 
@@ -25,11 +25,24 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
   const [error, setError] = useState<string>('');
 
   const createRoomMutation = api.room.createRoom.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setCreatedRoom(data);
       
       // Create session for the host
-      createSession(hostName, data.id);
+      const session = createSession(hostName, data.id);
+      
+      // Ensure session is created before proceeding
+      if (!session) {
+        setError('Failed to create session. Please try again.');
+        return;
+      }
+      
+      // Verify session was saved to localStorage
+      const savedSession = getSession();
+      if (!savedSession) {
+        setError('Session not properly saved. Please try again.');
+        return;
+      }
       
       // Create a Room object for the callback
       const room: Room = {
@@ -65,7 +78,10 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
         expiresAt: data.expiresAt
       };
       
-      onRoomCreated(room);
+      // Use requestAnimationFrame to ensure session is fully saved
+      requestAnimationFrame(() => {
+        onRoomCreated(room);
+      });
     },
     onError: (error) => {
       console.error('Error creating room:', error);
