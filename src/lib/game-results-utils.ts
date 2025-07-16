@@ -122,6 +122,8 @@ export function extractPlayerRoles(players: any[]): PlayerRole[] {
     description: getRoleDescription(player.role || 'loyal-servant'),
     roleData: player.roleData || {},
     rolePerformance: calculateRolePerformance(player, player.role || 'loyal-servant'),
+    survivalStatus: 'alive' as const,
+    performance: getPerformanceRating(Math.random() * 0.4 + 0.6),
   }));
 }
 
