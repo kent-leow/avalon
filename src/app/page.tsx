@@ -11,6 +11,11 @@ export default function Home() {
   useEffect(() => {
     const session = getSession();
     if (session?.roomCode) {
+      // Check if session is expired before redirecting
+      if (new Date() > new Date(session.expiresAt)) {
+        // Session expired, don't redirect
+        return;
+      }
       // User has an active session, redirect to their room
       router.push(`/room/${session.roomCode}/lobby`);
     }

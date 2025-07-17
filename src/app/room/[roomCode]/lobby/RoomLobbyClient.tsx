@@ -132,6 +132,13 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   }
 
   if (error || !roomData) {
+    // If room has expired, clear session and redirect
+    if (error?.message?.includes('expired')) {
+      clearSession();
+      router.push(`/room/${roomCode}`);
+      return null;
+    }
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">
         <div className="text-center">

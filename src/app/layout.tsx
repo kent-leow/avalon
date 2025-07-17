@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { SessionExpirationProvider } from "~/components/providers/SessionExpirationProvider";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -24,7 +25,11 @@ export default function RootLayout({
       <head>
       </head>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <SessionExpirationProvider>
+            {children}
+          </SessionExpirationProvider>
+        </TRPCReactProvider>
       </body>
     </html>
   );

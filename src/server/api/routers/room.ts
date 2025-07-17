@@ -9,6 +9,7 @@ import { assignRoles, validateRoleConfiguration, getVisiblePlayers } from "~/lib
 import { GameStateMachine, canStartGame } from "~/lib/game-state-machine";
 import { computeRoleKnowledge } from "~/lib/role-knowledge";
 import { getMissionRequirements, validateMissionTeam } from "~/lib/mission-rules";
+import { extendRoomOnActivity, validateRoomExpiration } from "~/lib/room-expiration-utils";
 import { 
   calculateVotingProgress, 
   calculateRejectionTracker, 
@@ -287,8 +288,11 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Room not found");
       }
       
-      // Check if room has expired
-      if (new Date() > room.expiresAt) {
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
         throw new Error("Room has expired");
       }
       
@@ -417,8 +421,11 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Room not found");
       }
       
-      // Check if room has expired
-      if (new Date() > room.expiresAt) {
+      // Validate room expiration and extend if accessing
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
         throw new Error("Room has expired");
       }
       
@@ -462,8 +469,11 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Room not found");
       }
       
-      // Check if room has expired
-      if (new Date() > room.expiresAt) {
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
         throw new Error("Room has expired");
       }
       
@@ -557,8 +567,11 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Room not found");
       }
       
-      // Check if room has expired
-      if (new Date() > room.expiresAt) {
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
         throw new Error("Room has expired");
       }
       
@@ -680,8 +693,11 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Room not found");
       }
       
-      // Check if room has expired
-      if (new Date() > room.expiresAt) {
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
         throw new Error("Room has expired");
       }
       
@@ -765,8 +781,11 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Room not found");
       }
       
-      // Check if room has expired
-      if (new Date() > room.expiresAt) {
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
         throw new Error("Room has expired");
       }
       
@@ -810,8 +829,11 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Player not found");
       }
       
-      // Check if room has expired
-      if (new Date() > player.room.expiresAt) {
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, player.room.id);
+        await extendRoomOnActivity(ctx.db, player.room.id);
+      } catch (error) {
         throw new Error("Room has expired");
       }
       
@@ -858,6 +880,14 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Room not found");
       }
       
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
+        throw new Error("Room has expired");
+      }
+      
       const player = room.players.find(p => p.id === playerId);
       if (!player) {
         throw new Error("Player not found in room");
@@ -895,6 +925,14 @@ export const roomRouter = createTRPCRouter({
       
       if (!room) {
         throw new Error("Room not found");
+      }
+      
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
+        throw new Error("Room has expired");
       }
       
       const newHost = room.players.find(p => p.id === newHostId);

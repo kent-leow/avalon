@@ -46,6 +46,16 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   useEffect(() => {
     console.log('RoomClient useEffect triggered:', { roomData: !!roomData, isLoading, hasValidSession, error });
     
+    // Handle expired room error
+    if (error?.message?.includes('expired')) {
+      // Clear session and show join form
+      const { clearSession } = require('~/lib/session');
+      clearSession();
+      setHasValidSession(false);
+      setShouldCheckRoom(false);
+      return;
+    }
+    
     if (roomData && !isLoading && hasValidSession) {
       // Determine where to redirect based on game state
       const gameState = roomData.gameState;
