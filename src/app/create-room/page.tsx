@@ -19,7 +19,7 @@ export default function CreateRoomPage() {
 
   const handleRoomCreated = (room: Room) => {
     console.log('Room created:', room);
-    // Navigate to the room lobby
+    // Navigate directly to the room lobby
     router.push(`/room/${room.code}/lobby`);
   };
 

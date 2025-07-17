@@ -18,7 +18,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   const [hasValidSession, setHasValidSession] = useState(false);
 
   // Check room data to determine game state
-  const { data: roomData, isLoading } = api.room.getRoomInfo.useQuery(
+  const { data: roomData, isLoading, error } = api.room.getRoomInfo.useQuery(
     { roomCode },
     { 
       enabled: shouldCheckRoom && mounted,
@@ -44,17 +44,29 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   }, [roomCode, mounted]);
 
   useEffect(() => {
+    console.log('RoomClient useEffect triggered:', { roomData: !!roomData, isLoading, hasValidSession, error });
+    
     if (roomData && !isLoading && hasValidSession) {
       // Determine where to redirect based on game state
       const gameState = roomData.gameState;
+      console.log('Room data received, redirecting to lobby. Game state:', gameState);
       if (gameState.phase === 'lobby') {
-        router.replace(`/room/${roomCode}/lobby`);
+        console.log('Redirecting to lobby:', `/room/${roomCode}/lobby`);
+        router.push(`/room/${roomCode}/lobby`);
       } else {
         // Game has started, redirect to game
-        router.replace(`/room/${roomCode}/game`);
+        console.log('Redirecting to game:', `/room/${roomCode}/game`);
+        router.push(`/room/${roomCode}/game`);
       }
+    } else if (error && hasValidSession) {
+      // Room query failed (likely expired), clear session and show join form
+      console.log('Room query failed, clearing session:', error.message);
+      const { clearSession } = require('~/lib/session');
+      clearSession();
+      setHasValidSession(false);
+      setShouldCheckRoom(false);
     }
-  }, [roomData, isLoading, roomCode, router, hasValidSession]);
+  }, [roomData, isLoading, error, roomCode, router, hasValidSession]);
 
   const handleJoinSuccess = (room: Room, player: Player) => {
     console.log('Successfully joined room:', room, 'as player:', player);
