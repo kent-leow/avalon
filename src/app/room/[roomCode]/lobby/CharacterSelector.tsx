@@ -57,7 +57,7 @@ export function CharacterSelector({
           <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
           Core Characters
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-2">
           {groupedCharacters.core.map((character) => (
             <CharacterCard
               key={character.id}
@@ -80,7 +80,7 @@ export function CharacterSelector({
           <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
           Special Characters
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-2">
           {groupedCharacters.special.map((character) => (
             <CharacterCard
               key={character.id}
