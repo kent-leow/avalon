@@ -9,6 +9,12 @@ export interface Character {
   requiredFor: readonly string[]; // Characters that require this one
   minPlayers: number;
   maxPlayers: number;
+  allowMultiple?: boolean; // Whether multiple instances are allowed
+  maxInstances?: number; // Maximum number of instances (only for allowMultiple: true)
+}
+
+export interface CharacterCount {
+  [characterId: string]: number;
 }
 
 export interface ValidationError {
@@ -109,7 +115,9 @@ export const AVALON_CHARACTERS = {
     conflicts: [],
     requiredFor: [],
     minPlayers: 5,
-    maxPlayers: 10
+    maxPlayers: 10,
+    allowMultiple: true,
+    maxInstances: 6
   },
   minion: {
     id: 'minion',
@@ -121,8 +129,34 @@ export const AVALON_CHARACTERS = {
     conflicts: [],
     requiredFor: [],
     minPlayers: 5,
-    maxPlayers: 10
+    maxPlayers: 10,
+    allowMultiple: true,
+    maxInstances: 4
   }
 } as const;
 
 export type CharacterId = keyof typeof AVALON_CHARACTERS;
+
+/**
+ * Convert character array to character count object
+ */
+export function charactersToCount(characters: string[]): CharacterCount {
+  const counts: CharacterCount = {};
+  for (const char of characters) {
+    counts[char] = (counts[char] || 0) + 1;
+  }
+  return counts;
+}
+
+/**
+ * Convert character count object to character array
+ */
+export function countToCharacters(counts: CharacterCount): string[] {
+  const characters: string[] = [];
+  for (const [charId, count] of Object.entries(counts)) {
+    for (let i = 0; i < count; i++) {
+      characters.push(charId);
+    }
+  }
+  return characters;
+}

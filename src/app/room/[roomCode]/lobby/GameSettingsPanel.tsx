@@ -8,7 +8,7 @@ import { validateCharacterConfiguration, isValidConfiguration } from '~/lib/char
 import { getDefaultSettings } from '~/lib/default-settings';
 import { api } from '~/trpc/react';
 import { type GameSettings } from '~/types/game-settings';
-import { type ValidationError } from '~/types/characters';
+import { type ValidationError, AVALON_CHARACTERS, type CharacterId } from '~/types/characters';
 
 interface GameSettingsPanelProps {
   roomId: string;
@@ -83,12 +83,60 @@ export function GameSettingsPanel({
   const handleCharacterToggle = (characterId: string) => {
     if (disabled || !isHost) return;
 
+    const character = AVALON_CHARACTERS[characterId as CharacterId];
+    if (!character) return;
+
     setSettings(prev => ({
       ...prev,
       characters: prev.characters.includes(characterId)
         ? prev.characters.filter(id => id !== characterId)
         : [...prev.characters, characterId]
     }));
+  };
+
+  const handleCharacterIncrement = (characterId: string) => {
+    if (disabled || !isHost) return;
+
+    const character = AVALON_CHARACTERS[characterId as CharacterId];
+    if (!character?.allowMultiple) return;
+
+    const currentCount = settings.characters.filter(id => id === characterId).length;
+    const maxInstances = character.maxInstances || 1;
+    
+    if (currentCount < maxInstances) {
+      setSettings(prev => ({
+        ...prev,
+        characters: [...prev.characters, characterId]
+      }));
+    }
+  };
+
+  const handleCharacterDecrement = (characterId: string) => {
+    if (disabled || !isHost) return;
+
+    const character = AVALON_CHARACTERS[characterId as CharacterId];
+    if (!character?.allowMultiple) return;
+
+    const currentCount = settings.characters.filter(id => id === characterId).length;
+    
+    if (currentCount > 1) {
+      // Remove one instance
+      const characters = [...settings.characters];
+      const index = characters.findIndex(id => id === characterId);
+      if (index > -1) {
+        characters.splice(index, 1);
+        setSettings(prev => ({
+          ...prev,
+          characters
+        }));
+      }
+    } else if (currentCount === 1) {
+      // Remove the last instance (same as toggle off)
+      setSettings(prev => ({
+        ...prev,
+        characters: prev.characters.filter(id => id !== characterId)
+      }));
+    }
   };
 
   const handleResetToDefault = () => {
@@ -216,6 +264,8 @@ export function GameSettingsPanel({
       <CharacterSelector
         selectedCharacters={settings.characters}
         onCharacterToggle={handleCharacterToggle}
+        onCharacterIncrement={handleCharacterIncrement}
+        onCharacterDecrement={handleCharacterDecrement}
         validationErrors={validationErrors}
         disabled={disabled || updateSettingsMutation.isPending}
       />

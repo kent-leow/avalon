@@ -1,11 +1,13 @@
 'use client';
 
 import { CharacterCard } from './CharacterCard';
-import { AVALON_CHARACTERS, type ValidationError, type CharacterId } from '~/types/characters';
+import { AVALON_CHARACTERS, type ValidationError, type CharacterId, type CharacterCount, charactersToCount } from '~/types/characters';
 
 interface CharacterSelectorProps {
   selectedCharacters: string[];
   onCharacterToggle: (character: string) => void;
+  onCharacterIncrement?: (character: string) => void;
+  onCharacterDecrement?: (character: string) => void;
   validationErrors: ValidationError[];
   disabled?: boolean;
   className?: string;
@@ -14,14 +16,25 @@ interface CharacterSelectorProps {
 export function CharacterSelector({ 
   selectedCharacters, 
   onCharacterToggle, 
+  onCharacterIncrement,
+  onCharacterDecrement,
   validationErrors, 
   disabled = false, 
   className = '' 
 }: CharacterSelectorProps) {
   const characters = Object.values(AVALON_CHARACTERS);
+  const characterCounts = charactersToCount(selectedCharacters);
 
   const getCharacterError = (characterId: string): boolean => {
     return validationErrors.some(error => error.characters.includes(characterId));
+  };
+
+  const getCharacterCount = (characterId: string): number => {
+    return characterCounts[characterId] || 0;
+  };
+
+  const isCharacterSelected = (characterId: string): boolean => {
+    return getCharacterCount(characterId) > 0;
   };
 
   const groupedCharacters = {
@@ -49,8 +62,11 @@ export function CharacterSelector({
             <CharacterCard
               key={character.id}
               character={character}
-              isSelected={selectedCharacters.includes(character.id)}
+              isSelected={isCharacterSelected(character.id)}
+              count={getCharacterCount(character.id)}
               onToggle={() => onCharacterToggle(character.id)}
+              onIncrement={onCharacterIncrement ? () => onCharacterIncrement(character.id) : undefined}
+              onDecrement={onCharacterDecrement ? () => onCharacterDecrement(character.id) : undefined}
               hasError={getCharacterError(character.id)}
               disabled={disabled}
             />
@@ -69,8 +85,11 @@ export function CharacterSelector({
             <CharacterCard
               key={character.id}
               character={character}
-              isSelected={selectedCharacters.includes(character.id)}
+              isSelected={isCharacterSelected(character.id)}
+              count={getCharacterCount(character.id)}
               onToggle={() => onCharacterToggle(character.id)}
+              onIncrement={onCharacterIncrement ? () => onCharacterIncrement(character.id) : undefined}
+              onDecrement={onCharacterDecrement ? () => onCharacterDecrement(character.id) : undefined}
               hasError={getCharacterError(character.id)}
               disabled={disabled}
             />

@@ -5,7 +5,10 @@ import { AVALON_CHARACTERS, type Character, type CharacterId } from '~/types/cha
 interface CharacterCardProps {
   character: Character;
   isSelected: boolean;
+  count: number;
   onToggle: () => void;
+  onIncrement?: () => void;
+  onDecrement?: () => void;
   hasError: boolean;
   disabled?: boolean;
   className?: string;
@@ -14,7 +17,10 @@ interface CharacterCardProps {
 export function CharacterCard({ 
   character, 
   isSelected, 
+  count,
   onToggle, 
+  onIncrement,
+  onDecrement,
   hasError, 
   disabled = false, 
   className = '' 
@@ -27,10 +33,35 @@ export function CharacterCard({
     return team === 'good' ? 'shadow-green-500/20' : 'shadow-red-500/20';
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (disabled) return;
+    
+    if (character.allowMultiple) {
+      if (count === 0) {
+        onToggle(); // Add first instance
+      }
+    } else {
+      onToggle(); // Regular toggle behavior
+    }
+  };
+
+  const handleIncrement = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (disabled || !onIncrement) return;
+    onIncrement();
+  };
+
+  const handleDecrement = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (disabled || !onDecrement) return;
+    onDecrement();
+  };
+
   return (
     <div 
       className={`relative group cursor-pointer transition-all duration-300 ${className}`}
-      onClick={disabled ? undefined : onToggle}
+      onClick={handleCardClick}
       data-testid={`character-card-${character.id}`}
     >
       <div className={`
@@ -56,6 +87,33 @@ export function CharacterCard({
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
+          </div>
+        )}
+
+        {/* Counter Controls for Multiple Instances */}
+        {character.allowMultiple && isSelected && (
+          <div className="absolute top-2 left-2 flex items-center space-x-1">
+            <button
+              onClick={handleDecrement}
+              disabled={disabled || count <= 1}
+              className="w-6 h-6 bg-red-500 hover:bg-red-600 disabled:bg-gray-500 disabled:opacity-50 rounded-full flex items-center justify-center transition-colors"
+            >
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+              </svg>
+            </button>
+            <span className="min-w-[24px] h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+              {count}
+            </span>
+            <button
+              onClick={handleIncrement}
+              disabled={disabled || count >= (character.maxInstances || 1)}
+              className="w-6 h-6 bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:opacity-50 rounded-full flex items-center justify-center transition-colors"
+            >
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
           </div>
         )}
 
