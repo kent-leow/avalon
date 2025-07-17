@@ -178,17 +178,17 @@ export default function StartGameSection({
   }
 
   return (
-    <div className={`bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] rounded-2xl p-8 ${className}`}>
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent mb-2">
-          Start Game
-        </h2>
-        <p className="text-slate-300 text-lg">
+    <div className={`bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-6 ${className}`}>
+      <div className="mb-6">
+        <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent mb-2">
+          Game Setup
+        </h3>
+        <p className="text-slate-300">
           Complete the requirements below to begin your Avalon adventure
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 gap-4 mb-6">
         <PreStartChecklist
           playerCount={playerCount}
           minPlayers={minPlayers}
@@ -205,7 +205,7 @@ export default function StartGameSection({
 
       {/* Player Ready Toggle (for non-host players) */}
       {!isHost && currentPlayer && (
-        <div className="mb-6 text-center">
+        <div className="mb-4 text-center">
           <button
             onClick={handleToggleReady}
             disabled={updatePlayerReadyMutation.isPending}

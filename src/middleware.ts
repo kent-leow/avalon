@@ -33,6 +33,7 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/room/')) {
       const session = await verifySession();
       if (!session) {
+        console.log('No JWT session found, redirecting to home');
         return NextResponse.redirect(new URL('/', request.url));
       }
       
@@ -41,6 +42,7 @@ export async function middleware(request: NextRequest) {
       if (roomCodeMatch) {
         const roomCode = roomCodeMatch[1];
         if (session.roomCode !== roomCode) {
+          console.log('Session room code mismatch:', session.roomCode, 'vs', roomCode);
           return NextResponse.redirect(new URL('/', request.url));
         }
       }

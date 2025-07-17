@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { generateJoinUrl } from '~/lib/room-code-generator';
-import { createSession, getSession } from '~/lib/session';
+import { saveSession, getSession, type PlayerSession } from '~/lib/session';
 import { api } from '~/trpc/react';
 import { type Room } from '~/types/room';
 
@@ -17,60 +17,79 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
 
   const createRoomMutation = api.room.createRoom.useMutation({
     onSuccess: async (data) => {
-      // Create session for the host
-      const session = createSession(hostName, data.id);
-      
-      // Ensure session is created before proceeding
-      if (!session) {
-        setError('Failed to create session. Please try again.');
-        return;
-      }
-      
-      // Verify session was saved to localStorage
-      const savedSession = getSession();
-      if (!savedSession) {
-        setError('Session not properly saved. Please try again.');
-        return;
-      }
-      
-      // Create a Room object for the callback
-      const room: Room = {
-        id: data.id,
-        code: data.code,
-        hostId: data.hostId,
-        phase: 'lobby', // Default phase when creating room
-        maxPlayers: 10, // Default max players
-        players: [{
-          id: data.hostId,
+      try {
+        // Create localStorage session for the host using the sessionId from the API
+        const session: PlayerSession = {
+          id: data.sessionId,
           name: hostName,
-          isHost: true,
-          isReady: false, // Host starts as not ready
-          joinedAt: new Date(),
           roomId: data.id,
-          sessionId: data.sessionId,
-        }],
-        gameState: {
-          phase: 'lobby',
-          round: 0,
-          leaderIndex: 0,
-          votes: [],
-          missions: []
-        },
-        settings: {
-          characters: [],
-          playerCount: 5,
-          allowSpectators: false,
-          autoStart: false
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        expiresAt: data.expiresAt
-      };
-      
-      // Use requestAnimationFrame to ensure session is fully saved
-      requestAnimationFrame(() => {
-        onRoomCreated(room);
-      });
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        };
+        
+        // Save the session to localStorage
+        saveSession(session);
+        
+        // Verify localStorage session was created
+        const savedSession = getSession();
+        if (!savedSession) {
+          setError('Session not properly saved. Please try again.');
+          return;
+        }
+        
+        // Double-check session has correct roomId and sessionId
+        if (savedSession.roomId !== data.id || savedSession.id !== data.sessionId) {
+          console.error('Session validation failed:', {
+            expected: { roomId: data.id, sessionId: data.sessionId },
+            actual: { roomId: savedSession.roomId, sessionId: savedSession.id }
+          });
+          setError('Session validation failed. Please try again.');
+          return;
+        }
+        
+        // Create a Room object for the callback
+        const room: Room = {
+          id: data.id,
+          code: data.code,
+          hostId: data.hostId,
+          phase: 'lobby', // Default phase when creating room
+          maxPlayers: 10, // Default max players
+          players: [{
+            id: data.hostId,
+            name: hostName,
+            isHost: true,
+            isReady: false, // Host starts as not ready
+            joinedAt: new Date(),
+            roomId: data.id,
+            sessionId: data.sessionId,
+          }],
+          gameState: {
+            phase: 'lobby',
+            round: 0,
+            leaderIndex: 0,
+            votes: [],
+            missions: []
+          },
+          settings: {
+            characters: [],
+            playerCount: 5,
+            allowSpectators: false,
+            autoStart: false
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          expiresAt: data.expiresAt
+        };
+        
+        // Use requestAnimationFrame to ensure session is fully saved
+        requestAnimationFrame(() => {
+          console.log('Room created successfully, redirecting to lobby with session:', savedSession);
+          onRoomCreated(room);
+        });
+      } catch (error) {
+        console.error('Error creating session:', error);
+        setError('Failed to create session. Please try again.');
+      }
     },
     onError: (error) => {
       console.error('Error creating room:', error);

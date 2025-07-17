@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '~/trpc/react';
 import { getSession } from '~/lib/session';
 import StartGameSection from './StartGameSection';
+import LobbySharing from './LobbySharing';
 import type { PlayerSession } from '~/lib/session';
 
 interface RoomLobbyClientProps {
@@ -21,12 +22,24 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
       const currentSession = getSession();
       
       if (!currentSession) {
-        // Give a brief delay to allow session to be created
+        // Give a longer delay to allow session to be created, especially for hosts
         setTimeout(() => {
           const retrySession = getSession();
           
           if (!retrySession) {
-            router.push(`/room/${roomCode}`);
+            // Instead of redirecting immediately, try one more time with a longer delay
+            setTimeout(() => {
+              const finalRetrySession = getSession();
+              
+              if (!finalRetrySession) {
+                // Only redirect if we're absolutely sure there's no session
+                console.log('No session found after multiple retries, redirecting to join page');
+                router.push(`/room/${roomCode}`);
+                return;
+              }
+              setSession(finalRetrySession);
+              setSessionChecked(true);
+            }, 500);
             return;
           }
           setSession(retrySession);
@@ -46,11 +59,34 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     { 
       enabled: !!roomCode && sessionChecked,
       refetchInterval: 2000, // Poll every 2 seconds for real-time updates
+      retry: 3, // Retry failed requests
+      retryDelay: 1000, // Wait 1 second between retries
     }
   );
 
   // Check if current player is host
   const isHost = session && roomData?.players?.find((p: any) => p.name === session.name)?.isHost;
+
+  // Additional session validation - check if session belongs to this room
+  useEffect(() => {
+    if (session && roomData) {
+      // Check if the session is for this room
+      const playerInRoom = roomData.players.find((p: any) => p.name === session.name);
+      
+      if (!playerInRoom) {
+        console.log('Session player not found in room, will retry or redirect');
+        // Give some time for database to sync, especially for newly created rooms
+        setTimeout(() => {
+          const retryPlayerInRoom = roomData.players.find((p: any) => p.name === session.name);
+          if (!retryPlayerInRoom) {
+            console.log('Session player still not found after retry, redirecting to join');
+            // Player not in room, redirect to join
+            router.push(`/room/${roomCode}`);
+          }
+        }, 2000); // Wait 2 seconds for database sync
+      }
+    }
+  }, [session, roomData, roomCode, router]);
 
   if (!sessionChecked || isLoading) {
     return (
@@ -67,13 +103,28 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-xl mb-4">Room not found</div>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-[#3d3d7a] hover:bg-[#4a4a96] text-white px-6 py-2 rounded-lg transition-colors"
-          >
-            Go Home
-          </button>
+          <div className="text-red-500 text-xl mb-4">
+            {error ? 'Error loading room' : 'Room not found'}
+          </div>
+          {error && (
+            <div className="text-red-400 text-sm mb-4 max-w-md">
+              {error.message || 'Unknown error occurred'}
+            </div>
+          )}
+          <div className="space-y-2">
+            <button
+              onClick={() => router.push(`/room/${roomCode}`)}
+              className="bg-[#3d3d7a] hover:bg-[#4a4a96] text-white px-6 py-2 rounded-lg transition-colors mr-2"
+            >
+              Try Join Room
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="bg-slate-600 hover:bg-slate-500 text-white px-6 py-2 rounded-lg transition-colors"
+            >
+              Go Home
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -103,12 +154,17 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
             </div>
           </div>
 
-          {/* Main Content - Use StartGameSection instead of basic display */}
-          <StartGameSection
-            roomId={roomData.id}
-            roomCode={roomCode}
-            className="mb-8"
-          />
+          {/* Main Content */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* Sharing Section */}
+            <LobbySharing roomCode={roomCode} />
+            
+            {/* Game Start Section */}
+            <StartGameSection
+              roomId={roomData.id}
+              roomCode={roomCode}
+            />
+          </div>
 
           {/* Navigation */}
           <div className="mt-8 flex justify-center gap-4">

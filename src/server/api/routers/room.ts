@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { createRoomCode, validateRoomCode, generateJoinUrl } from "~/lib/room-code-generator";
+import { createSession as createJWTSession } from "~/lib/auth";
 import { generateSessionId } from "~/lib/session";
 import { validateCharacterConfiguration } from "~/lib/character-validation";
 import { getDefaultSettings } from "~/lib/default-settings";
@@ -240,6 +241,14 @@ export const roomRouter = createTRPCRouter({
           players: true,
         },
       });
+      
+      // Create JWT session for the host
+      try {
+        await createJWTSession(sessionId, roomCode, hostName, true);
+      } catch (error) {
+        console.error('Failed to create JWT session for host:', error);
+        // Continue without JWT session for now
+      }
       
       return {
         id: updatedRoom.id,

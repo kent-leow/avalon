@@ -817,6 +817,56 @@ The application is now production-ready with:
 #### Result
 CSRF protection has been completely removed while maintaining the robust localStorage-based session system for user identity management. The application now relies on simpler session handling without the complexity of CSRF tokens.
 
+### Host Redirect After Room Creation - FIXED ✅
+
+#### Issue
+- Host was being redirected to home page after creating a room instead of staying in the lobby
+- The issue was caused by middleware session validation conflicting with localStorage session management
+- Two separate session systems were causing validation failures
+
+#### Root Cause
+1. **Dual Session Systems**:
+   - Client-side: localStorage session (`~/lib/session.ts`)
+   - Server-side: JWT cookie session (`~/lib/auth.ts`)
+   - Middleware expected JWT cookie but room creation only used localStorage
+
+2. **Session Validation Conflict**:
+   - `createRoom` API created database session but not JWT cookie
+   - Middleware redirected users without JWT cookie to home page
+   - This caused hosts to be redirected after successful room creation
+
+#### Solution Implemented
+1. **Unified Session Creation**:
+   - Modified `createRoom` API to create both database session AND JWT cookie
+   - Added `createJWTSession` call in the API after successful room creation
+   - Host now gets both localStorage and JWT cookie sessions
+
+2. **Improved Session Validation**:
+   - Enhanced `RoomLobbyClient` with better retry logic for session validation
+   - Added more robust timing for session creation and validation
+   - Improved error handling and debugging logs
+
+3. **Fixed Session Synchronization**:
+   - CreateRoomForm now properly uses sessionId from API response
+   - Both sessions use the same sessionId for consistency
+   - Proper validation ensures sessions match expected values
+
+#### Files Modified
+- `/src/server/api/routers/room.ts` - Added JWT session creation to createRoom API
+- `/src/app/create-room/CreateRoomForm.tsx` - Improved session validation and error handling
+- `/src/app/room/[roomCode]/lobby/RoomLobbyClient.tsx` - Enhanced session retry logic
+- `/src/middleware.ts` - Re-enabled middleware protection with proper logging
+
+#### Testing
+- ✅ Host correctly stays in lobby after room creation
+- ✅ JWT cookie session created alongside localStorage session
+- ✅ Middleware properly validates room access
+- ✅ No compilation errors or lint issues
+- ✅ Session synchronization working correctly
+
+#### Result
+Room creation now properly creates both session types, preventing the host from being redirected to home page and ensuring they stay in the lobby as expected.
+
 ### Room Creation Redirect Bug Fix - COMPLETED ✅
 
 #### Issue
