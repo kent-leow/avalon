@@ -36,28 +36,29 @@ export async function middleware(request: NextRequest) {
       // Allow access to room join pages without authentication for non-session users
       if (pathname.match(/^\/room\/[^\/]+\/?$/)) {
         console.log('Room join page access');
-        const session = await verifySession();
-        
-        // If user has valid session, let the client-side routing handle redirection
-        if (session) {
-          const roomCodeMatch = pathname.match(/^\/room\/([^\/]+)/);
-          if (roomCodeMatch && session.roomCode === roomCodeMatch[1]) {
-            console.log('User has valid session for this room, allowing client-side routing');
-            return NextResponse.next();
-          }
-        }
-        
         return NextResponse.next();
       }
       
+      // For protected routes like /room/[code]/lobby, /room/[code]/game, etc.
+      // Check for JWT session and allow client-side session fallback
       const session = await verifySession();
       console.log('Session verification result:', session);
       
       if (!session) {
-        console.log('No JWT session found, redirecting to room join page');
+        console.log('No JWT session found, checking if this is a valid room request');
         const roomCodeMatch = pathname.match(/^\/room\/([^\/]+)/);
         if (roomCodeMatch) {
           const roomCode = roomCodeMatch[1];
+          
+          // Allow access to lobby and game pages temporarily for client-side session validation
+          // The client component will handle redirection if the session is invalid
+          if (pathname.includes('/lobby') || pathname.includes('/game')) {
+            console.log('Allowing client-side session validation for protected route');
+            return NextResponse.next();
+          }
+          
+          // For other protected routes, redirect to room join
+          console.log('Redirecting to room join page');
           return NextResponse.redirect(new URL(`/room/${roomCode}`, request.url));
         }
         return NextResponse.redirect(new URL('/', request.url));

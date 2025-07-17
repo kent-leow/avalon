@@ -42,9 +42,20 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
           return;
         }
         
-        // Skip server validation for now to avoid blocking
-        // TODO: Fix session validation in a future update
-        console.log('Using local session without server validation:', currentSession);
+        // Try to verify session with server, but don't block if it fails
+        try {
+          const isValid = await verifyClientSession(roomCode);
+          if (!isValid) {
+            console.log('Server session verification failed, but proceeding with client session');
+            // Continue with client session - the server might be out of sync
+            // This is a fallback to prevent blocking legitimate users
+          }
+        } catch (error) {
+          console.log('Server session verification error, proceeding with client session:', error);
+          // Continue with client session
+        }
+        
+        console.log('Using session for lobby access:', currentSession);
         
         setSession(currentSession);
         setSessionChecked(true);

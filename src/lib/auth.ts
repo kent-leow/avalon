@@ -38,8 +38,8 @@ export async function createSession(
   cookieStore.set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
-    maxAge: 24 * 60 * 60, // 24 hours in seconds (not milliseconds)
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60, // 24 hours in seconds
     path: '/',
   });
   
@@ -48,6 +48,15 @@ export async function createSession(
   // Verify the cookie was set
   const verifyToken = cookieStore.get('session')?.value;
   console.log('Cookie verification:', { tokenSet: !!verifyToken, matches: verifyToken === token });
+  
+  // Additional verification - try to verify the token immediately
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    console.log('JWT token verification successful:', payload);
+  } catch (error) {
+    console.error('JWT token verification failed:', error);
+    throw new Error('Failed to create valid session token');
+  }
 }
 
 export async function verifySession(): Promise<SessionData | null> {
