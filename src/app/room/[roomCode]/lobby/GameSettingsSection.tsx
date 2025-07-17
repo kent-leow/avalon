@@ -97,12 +97,20 @@ export default function GameSettingsSection({
         <div className="bg-[#1a1a2e]/60 rounded-lg p-4">
           <div className="text-sm text-slate-400 mb-2">Selected Characters</div>
           <div className="flex flex-wrap gap-2">
-            {settings.characters.map((character) => (
+            {Object.entries(
+              settings.characters.reduce((counts, character) => {
+                counts[character] = (counts[character] || 0) + 1;
+                return counts;
+              }, {} as Record<string, number>)
+            ).map(([character, count]) => (
               <span
                 key={character}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30"
               >
                 {character.charAt(0).toUpperCase() + character.slice(1)}
+                {count > 1 && (
+                  <span className="ml-1 text-xs text-blue-300">×{count}</span>
+                )}
               </span>
             ))}
           </div>

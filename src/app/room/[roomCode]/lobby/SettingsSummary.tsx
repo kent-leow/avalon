@@ -87,13 +87,24 @@ export function SettingsSummary({ settings, playerCount, isValid, className = ''
                   {goodCount} / {config.good}
                 </span>
               </div>
-              <div className="mt-2 w-full bg-slate-600 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    goodCount === config.good ? 'bg-green-500' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${(goodCount / config.good) * 100}%` }}
-                />
+              <div className="mt-2 flex items-center space-x-2">
+                <div className="flex-1 bg-slate-600 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      goodCount === config.good ? 'bg-green-500' : 
+                      goodCount > config.good ? 'bg-red-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${Math.min((goodCount / config.good) * 100, 100)}%` }}
+                  />
+                </div>
+                {goodCount > config.good && (
+                  <div className="flex items-center text-xs text-red-400">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    +{goodCount - config.good}
+                  </div>
+                )}
               </div>
             </div>
             
@@ -104,13 +115,24 @@ export function SettingsSummary({ settings, playerCount, isValid, className = ''
                   {evilCount} / {config.evil}
                 </span>
               </div>
-              <div className="mt-2 w-full bg-slate-600 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    evilCount === config.evil ? 'bg-green-500' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${(evilCount / config.evil) * 100}%` }}
-                />
+              <div className="mt-2 flex items-center space-x-2">
+                <div className="flex-1 bg-slate-600 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      evilCount === config.evil ? 'bg-green-500' : 
+                      evilCount > config.evil ? 'bg-red-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${Math.min((evilCount / config.evil) * 100, 100)}%` }}
+                  />
+                </div>
+                {evilCount > config.evil && (
+                  <div className="flex items-center text-xs text-red-400">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    +{evilCount - config.evil}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -120,7 +142,12 @@ export function SettingsSummary({ settings, playerCount, isValid, className = ''
         <div>
           <h4 className="text-sm font-medium text-slate-300 mb-3">Selected Characters</h4>
           <div className="grid grid-cols-2 gap-2">
-            {settings.characters.map((characterId) => {
+            {Object.entries(
+              settings.characters.reduce((counts, characterId) => {
+                counts[characterId] = (counts[characterId] || 0) + 1;
+                return counts;
+              }, {} as Record<string, number>)
+            ).map(([characterId, count]) => {
               const character = AVALON_CHARACTERS[characterId as CharacterId];
               if (!character) return null;
               
@@ -129,7 +156,12 @@ export function SettingsSummary({ settings, playerCount, isValid, className = ''
                   <div className={`w-2 h-2 rounded-full ${
                     character.team === 'good' ? 'bg-green-500' : 'bg-red-500'
                   }`} />
-                  <span className="text-sm text-slate-200">{character.name}</span>
+                  <span className="text-sm text-slate-200">
+                    {character.name}
+                    {count > 1 && (
+                      <span className="ml-1 text-xs text-slate-400">×{count}</span>
+                    )}
+                  </span>
                 </div>
               );
             })}
