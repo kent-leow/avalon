@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PlayerNameInput } from './PlayerNameInput';
 import { RoomJoinStatus } from './RoomJoinStatus';
 import { validateRoomCode } from '~/lib/room-code-generator';
-import { createSession, getSession } from '~/lib/session';
+import { saveSession, getSession, type PlayerSession } from '~/lib/session';
 import { api } from '~/trpc/react';
 import { type Room, type Player } from '~/types/room';
 
@@ -32,11 +32,16 @@ export function JoinRoomForm({
       setJoinStatus('success');
       setRoomInfo(data.room);
       
-      // Create/update session
-      const session = getSession();
-      if (session) {
-        createSession(playerName, data.room.id);
-      }
+      // Create localStorage session using the sessionId from API response
+      const session: PlayerSession = {
+        id: data.player.sessionId,
+        name: playerName,
+        roomId: data.room.id,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      };
+      
+      saveSession(session);
       
       // Create Room and Player objects for the callback
       const room: Room = {
@@ -68,10 +73,11 @@ export function JoinRoomForm({
         sessionId: data.player.sessionId,
       };
 
-      // Simulate delay before navigation
+      // Give a small delay to ensure JWT session is created
       setTimeout(() => {
+        console.log('Join successful, redirecting to lobby');
         onJoinSuccess(room, player);
-      }, 1000);
+      }, 200); // Small delay to ensure JWT session is set
     },
     onError: (error) => {
       console.error('Error joining room:', error);

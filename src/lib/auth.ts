@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { env } from '~/env.js';
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key');
+const secret = new TextEncoder().encode(env.JWT_SECRET);
 
 export interface SessionData {
   userId: string;
@@ -18,6 +19,8 @@ export async function createSession(
   playerName: string,
   isHost: boolean = false
 ): Promise<void> {
+  console.log('Creating JWT session:', { userId, roomCode, playerName, isHost });
+  
   const token = await new SignJWT({ 
     userId, 
     roomCode, 
@@ -29,6 +32,8 @@ export async function createSession(
     .setExpirationTime('24h')
     .sign(secret);
 
+  console.log('JWT token created, setting cookie');
+  
   const cookieStore = await cookies();
   cookieStore.set('session', token, {
     httpOnly: true,
@@ -37,15 +42,27 @@ export async function createSession(
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     path: '/',
   });
+  
+  console.log('JWT session cookie set successfully');
+  
+  // Verify the cookie was set
+  const verifyToken = cookieStore.get('session')?.value;
+  console.log('Cookie verification:', { tokenSet: !!verifyToken, matches: verifyToken === token });
 }
 
 export async function verifySession(): Promise<SessionData | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('session')?.value;
-  if (!token) return null;
+  console.log('Verifying JWT session, token exists:', !!token);
+  
+  if (!token) {
+    console.log('No JWT token found in cookies');
+    return null;
+  }
 
   try {
     const { payload } = await jwtVerify(token, secret);
+    console.log('JWT session verified successfully:', payload);
     return payload as unknown as SessionData;
   } catch (error) {
     console.error('Session verification failed:', error);

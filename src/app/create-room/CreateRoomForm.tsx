@@ -81,11 +81,12 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
           expiresAt: data.expiresAt
         };
         
-        // Use requestAnimationFrame to ensure session is fully saved
-        requestAnimationFrame(() => {
+        // Use a longer delay to ensure JWT session is fully created
+        setTimeout(() => {
           console.log('Room created successfully, redirecting to lobby with session:', savedSession);
+          console.log('Current localStorage session:', getSession());
           onRoomCreated(room);
-        });
+        }, 100); // Small delay to ensure JWT session is set
       } catch (error) {
         console.error('Error creating session:', error);
         setError('Failed to create session. Please try again.');

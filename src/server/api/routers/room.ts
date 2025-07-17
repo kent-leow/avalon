@@ -244,7 +244,9 @@ export const roomRouter = createTRPCRouter({
       
       // Create JWT session for the host
       try {
-        await createJWTSession(sessionId, roomCode, hostName, true);
+        console.log('Creating JWT session for host:', hostPlayer.id, roomCode, hostName);
+        await createJWTSession(hostPlayer.id, roomCode, hostName, true);
+        console.log('JWT session created successfully for host');
       } catch (error) {
         console.error('Failed to create JWT session for host:', error);
         // Continue without JWT session for now
@@ -355,6 +357,16 @@ export const roomRouter = createTRPCRouter({
           players: true,
         },
       });
+      
+      // Create JWT session for the player
+      try {
+        console.log('Creating JWT session for player:', player.id, roomCode, playerName);
+        await createJWTSession(player.id, roomCode, playerName, false);
+        console.log('JWT session created successfully for player');
+      } catch (error) {
+        console.error('Failed to create JWT session for player:', error);
+        // Continue without JWT session for now
+      }
       
       return {
         success: true,
