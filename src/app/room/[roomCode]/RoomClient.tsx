@@ -1,7 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { JoinRoomForm } from './JoinRoomForm';
+import { getSession } from '~/lib/session';
 import { type Room, type Player } from '~/types/room';
 
 interface RoomClientProps {
@@ -10,6 +12,14 @@ interface RoomClientProps {
 
 export function RoomClient({ roomCode }: RoomClientProps) {
   const router = useRouter();
+
+  useEffect(() => {
+    const session = getSession();
+    if (session?.roomId) {
+      // User already has an active session, redirect to lobby
+      router.push(`/room/${roomCode}/lobby`);
+    }
+  }, [roomCode, router]);
 
   const handleJoinSuccess = (room: Room, player: Player) => {
     console.log('Successfully joined room:', room, 'as player:', player);

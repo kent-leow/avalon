@@ -1,11 +1,21 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { CreateRoomForm } from './CreateRoomForm';
+import { getSession } from '~/lib/session';
 import { type Room } from '~/types/room';
 
 export default function CreateRoomPage() {
   const router = useRouter();
+
+  useEffect(() => {
+    const session = getSession();
+    if (session?.roomId) {
+      // User already has an active session, redirect to lobby
+      router.push(`/room/${session.roomId}/lobby`);
+    }
+  }, [router]);
 
   const handleRoomCreated = (room: Room) => {
     console.log('Room created:', room);

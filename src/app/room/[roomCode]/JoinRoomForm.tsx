@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { PlayerNameInput } from './PlayerNameInput';
 import { RoomJoinStatus } from './RoomJoinStatus';
 import { validateRoomCode } from '~/lib/room-code-generator';
-import { saveSession, getSession, type PlayerSession } from '~/lib/session';
+import { syncClientSession, waitForSession } from '~/lib/session-sync';
+import { getSession } from '~/lib/session';
 import { api } from '~/trpc/react';
 import { type Room, type Player } from '~/types/room';
 
@@ -28,56 +29,65 @@ export function JoinRoomForm({
   const [roomInfo, setRoomInfo] = useState<Partial<Room> | undefined>();
 
   const joinRoomMutation = api.room.joinRoom.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setJoinStatus('success');
       setRoomInfo(data.room);
       
-      // Create localStorage session using the sessionId from API response
-      const session: PlayerSession = {
-        id: data.player.sessionId,
-        name: playerName,
-        roomId: data.room.id,
-        createdAt: new Date(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-      };
-      
-      saveSession(session);
-      
-      // Create Room and Player objects for the callback
-      const room: Room = {
-        id: data.room.id,
-        code: data.room.code,
-        hostId: '', // Will be populated from room info
-        players: [], // Will be populated from room info
-        gameState: data.room.gameState,
-        phase: 'lobby', // Default phase for joined room
-        maxPlayers: 10, // Default max players
-        settings: {
-          characters: [],
-          playerCount: data.room.playerCount,
-          allowSpectators: false,
-          autoStart: false
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000)
-      };
+      try {
+        // Sync client session with server session
+        await syncClientSession(
+          data.player.sessionId,
+          playerName,
+          data.room.id,
+          data.room.code,
+          data.player.isHost
+        );
+        
+        // Wait for session to be available
+        const session = await waitForSession(2000);
+        if (!session) {
+          setError('Session not properly created. Please try again.');
+          return;
+        }
+        
+        // Create Room and Player objects for the callback
+        const room: Room = {
+          id: data.room.id,
+          code: data.room.code,
+          hostId: '', // Will be populated from room info
+          players: [], // Will be populated from room info
+          gameState: data.room.gameState,
+          phase: 'lobby', // Default phase for joined room
+          maxPlayers: 10, // Default max players
+          settings: {
+            characters: [],
+            playerCount: data.room.playerCount,
+            allowSpectators: false,
+            autoStart: false
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+        };
 
-      const player: Player = {
-        id: data.player.id,
-        name: data.player.name,
-        isHost: data.player.isHost,
-        isReady: false, // Default to not ready when joining
-        joinedAt: new Date(),
-        roomId: data.room.id,
-        sessionId: data.player.sessionId,
-      };
+        const player: Player = {
+          id: data.player.id,
+          name: data.player.name,
+          isHost: data.player.isHost,
+          isReady: false, // Default to not ready when joining
+          joinedAt: new Date(),
+          roomId: data.room.id,
+          sessionId: data.player.sessionId,
+        };
 
-      // Give a small delay to ensure JWT session is created
-      setTimeout(() => {
+        // Direct navigation to lobby
         console.log('Join successful, redirecting to lobby');
         onJoinSuccess(room, player);
-      }, 200); // Small delay to ensure JWT session is set
+      } catch (error) {
+        console.error('Error syncing session:', error);
+        setError('Failed to create session. Please try again.');
+        setJoinStatus('error');
+      }
     },
     onError: (error) => {
       console.error('Error joining room:', error);

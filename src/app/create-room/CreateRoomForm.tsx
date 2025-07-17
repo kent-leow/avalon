@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { generateJoinUrl } from '~/lib/room-code-generator';
-import { saveSession, getSession, type PlayerSession } from '~/lib/session';
+import { syncClientSession, waitForSession } from '~/lib/session-sync';
 import { api } from '~/trpc/react';
 import { type Room } from '~/types/room';
 
@@ -18,32 +18,19 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
   const createRoomMutation = api.room.createRoom.useMutation({
     onSuccess: async (data) => {
       try {
-        // Create localStorage session for the host using the sessionId from the API
-        const session: PlayerSession = {
-          id: data.sessionId,
-          name: hostName,
-          roomId: data.id,
-          createdAt: new Date(),
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-        };
+        // Sync client session with server session
+        await syncClientSession(
+          data.sessionId,
+          hostName,
+          data.id,
+          data.code,
+          true // isHost
+        );
         
-        // Save the session to localStorage
-        saveSession(session);
-        
-        // Verify localStorage session was created
-        const savedSession = getSession();
-        if (!savedSession) {
-          setError('Session not properly saved. Please try again.');
-          return;
-        }
-        
-        // Double-check session has correct roomId and sessionId
-        if (savedSession.roomId !== data.id || savedSession.id !== data.sessionId) {
-          console.error('Session validation failed:', {
-            expected: { roomId: data.id, sessionId: data.sessionId },
-            actual: { roomId: savedSession.roomId, sessionId: savedSession.id }
-          });
-          setError('Session validation failed. Please try again.');
+        // Wait for session to be available
+        const session = await waitForSession(2000);
+        if (!session) {
+          setError('Session not properly created. Please try again.');
           return;
         }
         
@@ -81,12 +68,9 @@ export function CreateRoomForm({ onRoomCreated, className = '' }: CreateRoomForm
           expiresAt: data.expiresAt
         };
         
-        // Use a longer delay to ensure JWT session is fully created
-        setTimeout(() => {
-          console.log('Room created successfully, redirecting to lobby with session:', savedSession);
-          console.log('Current localStorage session:', getSession());
-          onRoomCreated(room);
-        }, 100); // Small delay to ensure JWT session is set
+        // Direct navigation to lobby
+        console.log('Room created successfully, redirecting to lobby with session:', session);
+        onRoomCreated(room);
       } catch (error) {
         console.error('Error creating session:', error);
         setError('Failed to create session. Please try again.');

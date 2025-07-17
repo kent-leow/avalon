@@ -32,11 +32,23 @@ export async function middleware(request: NextRequest) {
     // Protect room routes with authentication
     if (pathname.startsWith('/room/')) {
       console.log('Middleware protecting room route:', pathname);
+      
+      // Allow access to room join pages without authentication
+      if (pathname.match(/^\/room\/[^\/]+\/?$/)) {
+        console.log('Allowing access to room join page');
+        return NextResponse.next();
+      }
+      
       const session = await verifySession();
       console.log('Session verification result:', session);
       
       if (!session) {
-        console.log('No JWT session found, redirecting to home');
+        console.log('No JWT session found, redirecting to room join page');
+        const roomCodeMatch = pathname.match(/^\/room\/([^\/]+)/);
+        if (roomCodeMatch) {
+          const roomCode = roomCodeMatch[1];
+          return NextResponse.redirect(new URL(`/room/${roomCode}`, request.url));
+        }
         return NextResponse.redirect(new URL('/', request.url));
       }
       
@@ -47,7 +59,7 @@ export async function middleware(request: NextRequest) {
         console.log('Checking session room code:', session.roomCode, 'vs URL room code:', roomCode);
         if (session.roomCode !== roomCode) {
           console.log('Session room code mismatch:', session.roomCode, 'vs', roomCode);
-          return NextResponse.redirect(new URL('/', request.url));
+          return NextResponse.redirect(new URL(`/room/${roomCode}`, request.url));
         }
       }
     }

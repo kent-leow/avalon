@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '~/trpc/react';
-import { getSession } from '~/lib/session';
+import { waitForSession, verifyClientSession } from '~/lib/session-sync';
+import { getSession, clearSession } from '~/lib/session';
 import StartGameSection from './StartGameSection';
 import LobbySharing from './LobbySharing';
 import type { PlayerSession } from '~/lib/session';
@@ -18,37 +19,37 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
-    const checkSession = () => {
-      const currentSession = getSession();
-      
-      if (!currentSession) {
-        // Give a longer delay to allow session to be created, especially for hosts
-        setTimeout(() => {
-          const retrySession = getSession();
+    const checkSession = async () => {
+      try {
+        // First check if session exists in localStorage
+        let currentSession = getSession();
+        
+        if (!currentSession) {
+          // Try to wait for session to be created
+          currentSession = await waitForSession(3000);
           
-          if (!retrySession) {
-            // Instead of redirecting immediately, try one more time with a longer delay
-            setTimeout(() => {
-              const finalRetrySession = getSession();
-              
-              if (!finalRetrySession) {
-                // Only redirect if we're absolutely sure there's no session
-                console.log('No session found after multiple retries, redirecting to join page');
-                router.push(`/room/${roomCode}`);
-                return;
-              }
-              setSession(finalRetrySession);
-              setSessionChecked(true);
-            }, 500);
+          if (!currentSession) {
+            console.log('No session found after waiting, redirecting to join page');
+            router.push(`/room/${roomCode}`);
             return;
           }
-          setSession(retrySession);
-          setSessionChecked(true);
-        }, 200);
-        return;
+        }
+        
+        // Verify session with server
+        const isValid = await verifyClientSession(roomCode);
+        
+        if (!isValid) {
+          console.log('Session validation failed, redirecting to join page');
+          router.push(`/room/${roomCode}`);
+          return;
+        }
+        
+        setSession(currentSession);
+        setSessionChecked(true);
+      } catch (error) {
+        console.error('Session check failed:', error);
+        router.push(`/room/${roomCode}`);
       }
-      setSession(currentSession);
-      setSessionChecked(true);
     };
 
     checkSession();
@@ -130,6 +131,11 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     );
   }
 
+  const handleLeaveRoom = () => {
+    clearSession();
+    router.push('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547]">
       <div className="container mx-auto px-4 py-8">
@@ -175,8 +181,8 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
               Back to Join
             </button>
             <button
-              onClick={() => router.push('/')}
-              className="bg-slate-600 hover:bg-slate-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
+              onClick={handleLeaveRoom}
+              className="bg-red-600 hover:bg-red-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
             >
               Leave Room
             </button>

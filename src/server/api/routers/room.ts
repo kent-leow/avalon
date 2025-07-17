@@ -249,7 +249,7 @@ export const roomRouter = createTRPCRouter({
         console.log('JWT session created successfully for host');
       } catch (error) {
         console.error('Failed to create JWT session for host:', error);
-        // Continue without JWT session for now
+        throw new Error('Failed to create session. Please try again.');
       }
       
       return {
@@ -365,7 +365,7 @@ export const roomRouter = createTRPCRouter({
         console.log('JWT session created successfully for player');
       } catch (error) {
         console.error('Failed to create JWT session for player:', error);
-        // Continue without JWT session for now
+        throw new Error('Failed to create session. Please try again.');
       }
       
       return {

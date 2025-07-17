@@ -38,8 +38,8 @@ export async function createSession(
   cookieStore.set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
+    maxAge: 24 * 60 * 60, // 24 hours in seconds (not milliseconds)
     path: '/',
   });
   
