@@ -9,5 +9,7 @@ interface PageProps {
 export default async function RoomLobbyPage({ params }: PageProps) {
   const { roomCode } = await params;
 
+  console.log('RoomLobbyPage params:', { roomCode });
+
   return <RoomLobbyClient roomCode={roomCode} />;
 }

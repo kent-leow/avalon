@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '~/trpc/react';
 import { waitForSession, verifyClientSession } from '~/lib/session-sync';
-import { getSession, clearSession } from '~/lib/session';
+import { getSession, clearSession, extendSession } from '~/lib/session';
 import StartGameSection from './StartGameSection';
 import LobbySharing from './LobbySharing';
 import type { PlayerSession } from '~/lib/session';
@@ -64,6 +64,13 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
       retryDelay: 1000, // Wait 1 second between retries
     }
   );
+
+  // Extend session on successful data fetch
+  useEffect(() => {
+    if (roomData && !isLoading) {
+      extendSession();
+    }
+  }, [roomData, isLoading]);
 
   // Check if current player is host
   const isHost = session && roomData?.players?.find((p: any) => p.name === session.name)?.isHost;
@@ -131,7 +138,18 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     );
   }
 
-  const handleLeaveRoom = () => {
+  const handleLeaveRoom = async () => {
+    try {
+      // Clear server session
+      await fetch('/api/clear-session', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error clearing server session:', error);
+    }
+    
+    // Clear client session
     clearSession();
     router.push('/');
   };

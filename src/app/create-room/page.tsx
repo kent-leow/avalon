@@ -11,9 +11,9 @@ export default function CreateRoomPage() {
 
   useEffect(() => {
     const session = getSession();
-    if (session?.roomId) {
+    if (session?.roomCode) {
       // User already has an active session, redirect to lobby
-      router.push(`/room/${session.roomId}/lobby`);
+      router.push(`/room/${session.roomCode}/lobby`);
     }
   }, [router]);
 

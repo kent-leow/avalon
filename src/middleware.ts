@@ -33,9 +33,20 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/room/')) {
       console.log('Middleware protecting room route:', pathname);
       
-      // Allow access to room join pages without authentication
+      // Allow access to room join pages without authentication for non-session users
       if (pathname.match(/^\/room\/[^\/]+\/?$/)) {
-        console.log('Allowing access to room join page');
+        console.log('Room join page access');
+        const session = await verifySession();
+        
+        // If user has valid session, let the client-side routing handle redirection
+        if (session) {
+          const roomCodeMatch = pathname.match(/^\/room\/([^\/]+)/);
+          if (roomCodeMatch && session.roomCode === roomCodeMatch[1]) {
+            console.log('User has valid session for this room, allowing client-side routing');
+            return NextResponse.next();
+          }
+        }
+        
         return NextResponse.next();
       }
       

@@ -9,6 +9,7 @@ export interface PlayerSession {
   id: string;
   name: string;
   roomId?: string;
+  roomCode?: string;
   createdAt: Date;
   expiresAt: Date;
 }
@@ -62,11 +63,12 @@ export function saveSession(session: PlayerSession): void {
 /**
  * Create a new session
  */
-export function createSession(name: string, roomId?: string): PlayerSession {
+export function createSession(name: string, roomId?: string, roomCode?: string): PlayerSession {
   const session: PlayerSession = {
     id: generateSessionId(),
     name,
     roomId,
+    roomCode,
     createdAt: new Date(),
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
   };
@@ -76,7 +78,7 @@ export function createSession(name: string, roomId?: string): PlayerSession {
 }
 
 /**
- * Update existing session
+ * Update existing session and extend expiration time
  */
 export function updateSession(updates: Partial<PlayerSession>): PlayerSession | null {
   const currentSession = getSession();
@@ -84,7 +86,8 @@ export function updateSession(updates: Partial<PlayerSession>): PlayerSession | 
   
   const updatedSession = {
     ...currentSession,
-    ...updates
+    ...updates,
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // Extend expiration by 24 hours
   };
   
   saveSession(updatedSession);
@@ -102,6 +105,22 @@ export function clearSession(): void {
   } catch (error) {
     console.error('Error clearing session:', error);
   }
+}
+
+/**
+ * Extend session expiration time (called on user activity)
+ */
+export function extendSession(): PlayerSession | null {
+  const currentSession = getSession();
+  if (!currentSession) return null;
+  
+  const extendedSession = {
+    ...currentSession,
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // Extend by 24 hours
+  };
+  
+  saveSession(extendedSession);
+  return extendedSession;
 }
 
 /**

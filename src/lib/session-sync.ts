@@ -48,6 +48,7 @@ export async function syncClientSession(
     id: playerId,
     name: playerName,
     roomId,
+    roomCode,
     createdAt: new Date(),
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
   };
