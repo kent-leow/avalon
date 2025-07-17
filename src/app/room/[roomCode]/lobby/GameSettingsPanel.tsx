@@ -98,10 +98,11 @@ export function GameSettingsPanel({
     if (disabled || !isHost) return;
 
     const character = AVALON_CHARACTERS[characterId as CharacterId];
-    if (!character?.allowMultiple) return;
+    const allowMultiple = (character as any).allowMultiple;
+    if (!allowMultiple) return;
 
     const currentCount = settings.characters.filter(id => id === characterId).length;
-    const maxInstances = character.maxInstances || 1;
+    const maxInstances = (character as any).maxInstances || 1;
     
     if (currentCount < maxInstances) {
       setSettings(prev => ({
@@ -115,7 +116,8 @@ export function GameSettingsPanel({
     if (disabled || !isHost) return;
 
     const character = AVALON_CHARACTERS[characterId as CharacterId];
-    if (!character?.allowMultiple) return;
+    const allowMultiple = (character as any).allowMultiple;
+    if (!allowMultiple) return;
 
     const currentCount = settings.characters.filter(id => id === characterId).length;
     

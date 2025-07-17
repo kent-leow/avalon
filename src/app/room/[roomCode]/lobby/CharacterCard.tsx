@@ -68,7 +68,7 @@ export function CharacterCard({
         bg-[#252547]/80 backdrop-blur-xl border-2 rounded-2xl p-4 shadow-xl
         transition-all duration-300 hover:shadow-2xl
         ${isSelected 
-          ? `border-[#3d3d7a] bg-[#3d3d7a]/20 ring-4 ring-blue-500/50 transform scale-102 ${getTeamGlow(character.team)}` 
+          ? `border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/50 transform scale-102 ${getTeamGlow(character.team)}` 
           : 'border-slate-600/30 hover:border-slate-500/50'
         }
         ${hasError ? 'border-red-500 bg-red-500/10' : ''}
@@ -82,8 +82,8 @@ export function CharacterCard({
         </div>
 
         {/* Selection Indicator */}
-        {isSelected && (
-          <div className="absolute top-2 left-2 inline-flex items-center justify-center w-6 h-6 bg-blue-500 rounded-full">
+        {isSelected && !character.allowMultiple && (
+          <div className="absolute top-2 left-2 inline-flex items-center justify-center w-6 h-6 bg-blue-500 rounded-full z-10">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -92,7 +92,7 @@ export function CharacterCard({
 
         {/* Counter Controls for Multiple Instances */}
         {character.allowMultiple && isSelected && (
-          <div className="absolute top-2 left-2 flex items-center space-x-1">
+          <div className="absolute top-2 left-2 flex items-center space-x-1 z-10">
             <button
               onClick={handleDecrement}
               disabled={disabled || count <= 1}
