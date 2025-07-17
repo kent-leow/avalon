@@ -443,6 +443,7 @@ export const roomRouter = createTRPCRouter({
           isHost: p.isHost,
           isReady: p.isReady,
           joinedAt: p.joinedAt,
+          roomId: p.roomId,
         })),
         createdAt: room.createdAt,
         expiresAt: room.expiresAt,

@@ -219,7 +219,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
                   roomId={roomData.id}
                   roomCode={roomCode}
                   players={roomData.players}
-                  isHost={isHost}
+                  isHost={isHost ?? false}
                 />
               </div>
               
@@ -237,7 +237,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
               <GameSettingsSection
                 roomId={roomData.id}
                 currentSettings={roomData.settings}
-                isHost={isHost}
+                isHost={isHost ?? false}
               />
             </div>
           </div>
