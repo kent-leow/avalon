@@ -838,6 +838,95 @@ export const roomRouter = createTRPCRouter({
     }),
 
   /**
+   * Kick a player from the room
+   */
+  kickPlayer: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+      playerId: z.string().cuid("Invalid player ID"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, playerId } = input;
+      
+      // Find the room and player
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found in room");
+      }
+      
+      // Check if player is host (can't kick host)
+      if (player.isHost) {
+        throw new Error("Cannot kick the host");
+      }
+      
+      // Remove player from room
+      await ctx.db.player.delete({
+        where: { id: playerId },
+      });
+      
+      return { success: true };
+    }),
+
+  /**
+   * Transfer host privileges to another player
+   */
+  transferHost: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+      newHostId: z.string().cuid("Invalid new host ID"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, newHostId } = input;
+      
+      // Find the room and players
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      const newHost = room.players.find(p => p.id === newHostId);
+      if (!newHost) {
+        throw new Error("New host player not found in room");
+      }
+      
+      // Update players in transaction
+      await ctx.db.$transaction(async (tx) => {
+        // Remove host privileges from all players
+        await tx.player.updateMany({
+          where: { roomId },
+          data: { isHost: false },
+        });
+        
+        // Give host privileges to new host
+        await tx.player.update({
+          where: { id: newHostId },
+          data: { isHost: true },
+        });
+        
+        // Update room hostId
+        await tx.room.update({
+          where: { id: roomId },
+          data: { hostId: newHostId },
+        });
+      });
+      
+      return { success: true };
+    }),
+
+  /**
    * Clean up expired rooms
    */
   cleanupExpiredRooms: publicProcedure

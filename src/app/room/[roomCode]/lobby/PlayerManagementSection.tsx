@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { api } from '~/trpc/react';
 import { getSession } from '~/lib/session';
 import type { Player } from '~/types/room';
 
@@ -27,6 +28,10 @@ export default function PlayerManagementSection({
   const session = getSession();
   const currentPlayerId = session && players.find(p => p.name === session.name)?.id;
 
+  const updatePlayerReady = api.room.updatePlayerReady.useMutation();
+  const kickPlayer = api.room.kickPlayer.useMutation();
+  const transferHost = api.room.transferHost.useMutation();
+
   // Create extended player data with action permissions
   const extendedPlayers: ExtendedPlayer[] = players.map(player => ({
     ...player,
@@ -34,6 +39,26 @@ export default function PlayerManagementSection({
     canKick: isHost && player.id !== currentPlayerId && !player.isHost,
     canMakeHost: isHost && player.id !== currentPlayerId && !player.isHost,
   }));
+
+  const handleToggleReady = async () => {
+    if (!currentPlayerId) return;
+    
+    const currentPlayer = players.find(p => p.id === currentPlayerId);
+    if (!currentPlayer) return;
+
+    setPlayerActions(prev => ({ ...prev, [currentPlayerId]: true }));
+    
+    try {
+      await updatePlayerReady.mutateAsync({
+        playerId: currentPlayerId,
+        isReady: !currentPlayer.isReady,
+      });
+    } catch (error) {
+      console.error('Failed to toggle ready status:', error);
+    } finally {
+      setPlayerActions(prev => ({ ...prev, [currentPlayerId]: false }));
+    }
+  };
 
   const handleKickPlayer = async (playerId: string) => {
     if (!isHost || !currentPlayerId) return;
@@ -44,9 +69,12 @@ export default function PlayerManagementSection({
     setPlayerActions(prev => ({ ...prev, [playerId]: true }));
     
     try {
-      // TODO: Implement kick player API
-      console.log('Kick player:', playerId);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
+      await kickPlayer.mutateAsync({
+        roomId,
+        playerId,
+      });
+    } catch (error) {
+      console.error('Failed to kick player:', error);
     } finally {
       setPlayerActions(prev => ({ ...prev, [playerId]: false }));
     }
@@ -62,9 +90,12 @@ export default function PlayerManagementSection({
     setPlayerActions(prev => ({ ...prev, [playerId]: true }));
     
     try {
-      // TODO: Implement transfer host API
-      console.log('Transfer host to:', playerId);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
+      await transferHost.mutateAsync({
+        roomId,
+        newHostId: playerId,
+      });
+    } catch (error) {
+      console.error('Failed to transfer host:', error);
     } finally {
       setPlayerActions(prev => ({ ...prev, [playerId]: false }));
     }
@@ -145,6 +176,28 @@ export default function PlayerManagementSection({
                     {playerActions[player.id] ? 'Kicking...' : 'Kick'}
                   </button>
                 )}
+              </div>
+            )}
+
+            {player.isCurrentPlayer && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleToggleReady}
+                  disabled={playerActions[currentPlayerId || '']}
+                  className={`text-xs px-3 py-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    player.isReady
+                      ? 'bg-red-600 hover:bg-red-500 text-white'
+                      : 'bg-green-600 hover:bg-green-500 text-white'
+                  }`}
+                  title={player.isReady ? 'Mark as not ready' : 'Mark as ready'}
+                >
+                  {playerActions[currentPlayerId || ''] 
+                    ? 'Processing...' 
+                    : player.isReady 
+                      ? 'Not Ready' 
+                      : 'Ready'
+                  }
+                </button>
               </div>
             )}
           </div>

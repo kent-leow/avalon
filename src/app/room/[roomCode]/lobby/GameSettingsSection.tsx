@@ -83,7 +83,7 @@ export default function GameSettingsSection({
 
       {/* Settings Summary */}
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-[#1a1a2e]/60 rounded-lg p-4">
             <div className="text-sm text-slate-400 mb-1">Players</div>
             <div className="text-xl font-semibold text-white">{summary.playerCount}</div>
@@ -108,7 +108,7 @@ export default function GameSettingsSection({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-[#1a1a2e]/60 rounded-lg p-4">
             <div className="text-sm text-slate-400 mb-1">Time Limit</div>
             <div className="text-lg font-semibold text-white">{summary.timeLimit}</div>
@@ -130,7 +130,7 @@ export default function GameSettingsSection({
         </div>
 
         {isHost && (
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={handleToggleExpand}
               className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors"
@@ -139,7 +139,7 @@ export default function GameSettingsSection({
             </button>
             <button
               onClick={handleResetSettings}
-              className="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg transition-colors"
+              className="sm:w-auto bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg transition-colors"
               title="Reset to default settings"
             >
               Reset
@@ -151,12 +151,14 @@ export default function GameSettingsSection({
       {/* Expanded Settings Panel */}
       {isExpanded && (
         <div className="mt-6 pt-6 border-t border-slate-600/30">
-          <GameSettingsPanel
-            roomId={roomId}
-            currentSettings={settings}
-            isHost={isHost}
-            onSettingsChange={handleSettingsChange}
-          />
+          <div className="w-full overflow-x-auto">
+            <GameSettingsPanel
+              roomId={roomId}
+              currentSettings={settings}
+              isHost={isHost}
+              onSettingsChange={handleSettingsChange}
+            />
+          </div>
         </div>
       )}
     </div>
