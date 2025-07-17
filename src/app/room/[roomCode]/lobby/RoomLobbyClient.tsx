@@ -210,31 +210,34 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            {/* Players Section */}
-            <div className="xl:col-span-1">
-              <PlayerManagementSection
-                roomId={roomData.id}
-                roomCode={roomCode}
-                players={roomData.players}
-                isHost={isHost}
-              />
+          <div className="space-y-8">
+            {/* Top Row - Players and Game Start */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              {/* Players Section */}
+              <div>
+                <PlayerManagementSection
+                  roomId={roomData.id}
+                  roomCode={roomCode}
+                  players={roomData.players}
+                  isHost={isHost}
+                />
+              </div>
+              
+              {/* Game Start Section */}
+              <div>
+                <StartGameSection
+                  roomId={roomData.id}
+                  roomCode={roomCode}
+                />
+              </div>
             </div>
             
-            {/* Game Settings Section */}
-            <div className="xl:col-span-1">
+            {/* Bottom Row - Game Settings (Full Width) */}
+            <div>
               <GameSettingsSection
                 roomId={roomData.id}
                 currentSettings={roomData.settings}
                 isHost={isHost}
-              />
-            </div>
-            
-            {/* Game Start Section */}
-            <div className="xl:col-span-1">
-              <StartGameSection
-                roomId={roomData.id}
-                roomCode={roomCode}
               />
             </div>
           </div>
