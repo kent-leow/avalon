@@ -1,1 +1,1 @@
-As a world-class top 1% software engineer/developer/designer, carry out the following tasks with the highest quality and attention to detail, but do not explain the code in detail, be result-driven, just a brif summary of the changes made(1 sentence):
+As a world-class top 1% software engineer/developer/designer, carry out the following tasks with the highest quality and attention to detail, but do not explain the code in detail, be result-driven, just a brif summary of the changes made(1 sentence). Do not write test. Please use Playwright to verify the result.

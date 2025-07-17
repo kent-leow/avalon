@@ -7,6 +7,8 @@ import { waitForSession, verifyClientSession } from '~/lib/session-sync';
 import { getSession, clearSession, extendSession } from '~/lib/session';
 import StartGameSection from './StartGameSection';
 import LobbySharing from './LobbySharing';
+import PlayerManagementSection from './PlayerManagementSection';
+import GameSettingsSection from './GameSettingsSection';
 import type { PlayerSession } from '~/lib/session';
 
 interface RoomLobbyClientProps {
@@ -201,15 +203,38 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            {/* Sharing Section */}
-            <LobbySharing roomCode={roomCode} />
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            {/* Players Section */}
+            <div className="xl:col-span-1">
+              <PlayerManagementSection
+                roomId={roomData.id}
+                roomCode={roomCode}
+                players={roomData.players}
+                isHost={isHost}
+              />
+            </div>
+            
+            {/* Game Settings Section */}
+            <div className="xl:col-span-1">
+              <GameSettingsSection
+                roomId={roomData.id}
+                currentSettings={roomData.settings}
+                isHost={isHost}
+              />
+            </div>
             
             {/* Game Start Section */}
-            <StartGameSection
-              roomId={roomData.id}
-              roomCode={roomCode}
-            />
+            <div className="xl:col-span-1">
+              <StartGameSection
+                roomId={roomData.id}
+                roomCode={roomCode}
+              />
+            </div>
+          </div>
+
+          {/* Sharing Section */}
+          <div className="mt-8">
+            <LobbySharing roomCode={roomCode} />
           </div>
 
           {/* Navigation */}
