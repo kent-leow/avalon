@@ -132,8 +132,23 @@ function GameClient({ roomCode }: { roomCode: string }) {
   );
 }
 
-export default async function GamePage({ params }: PageProps) {
-  const { roomCode } = await params;
+export default function GamePage({ params }: PageProps) {
+  const [roomCode, setRoomCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    params.then(({ roomCode }) => setRoomCode(roomCode));
+  }, [params]);
+
+  if (!roomCode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <div className="text-white text-xl">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return <GameClient roomCode={roomCode} />;
 }
