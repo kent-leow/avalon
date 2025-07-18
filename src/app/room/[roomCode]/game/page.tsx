@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from '~/lib/session';
 import { type PlayerSession } from '~/lib/session';
-import { useSSERealtimeRoom } from '~/hooks/useSSERealtimeRoom';
+import { useOptimizedRealtimeRoom } from '~/hooks/useOptimizedRealtimeRoom';
 import { GameEngine } from '~/components/game-engine';
 import { type GameState, type GamePhase } from '~/types/game-state';
 
@@ -19,12 +19,12 @@ function GameClient({ roomCode }: { roomCode: string }) {
   const [session, setSession] = useState<PlayerSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
 
-  // Use real-time room hook instead of polling
+  // Use optimized real-time room hook instead of individual SSE subscription
   const {
     roomState,
     isConnected,
     connectionState,
-  } = useSSERealtimeRoom({
+  } = useOptimizedRealtimeRoom({
     roomCode,
     playerId: session?.id || '',
     playerName: session?.name || '',

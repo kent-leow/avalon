@@ -9,7 +9,7 @@ import PlayerReadyList from "./PlayerReadyList";
 import StartGameButton from "./StartGameButton";
 import GameStartStatus from "./GameStartStatus";
 import { type GameStartStatus as GameStartStatusType, type PlayerReadyStatus } from "~/types/game-state";
-import { useSSERealtimeRoom } from "~/hooks/useSSERealtimeRoom";
+import { useOptimizedRealtimeRoom } from "~/hooks/useOptimizedRealtimeRoom";
 
 interface StartGameSectionProps {
   roomId: string;
@@ -26,10 +26,13 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
     message: '',
   });
 
-  // Use SSE for real-time updates instead of polling
+    // Use optimized real-time room hook instead of individual SSE subscription
   const {
     roomState,
-  } = useSSERealtimeRoom({
+    isConnected,
+    connectionState,
+    updatePlayerReady,
+  } = useOptimizedRealtimeRoom({
     roomCode,
     playerId: session?.id || '',
     playerName: session?.name || '',
@@ -73,7 +76,7 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
 
   // Get current player info from session
   const currentPlayer = room && session 
-    ? room.players.find(p => p.name === session.name) // Find by name since session ID might not match player ID
+    ? room.players.find((p: any) => p.name === session.name) // Find by name since session ID might not match player ID
     : null;
 
   // Mutations
@@ -135,7 +138,7 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
   const handleStartGame = () => {
     if (!currentPlayer || !room) return;
     
-    const hostPlayer = room.players.find(p => p.isHost);
+    const hostPlayer = room.players.find((p: any) => p.isHost);
     if (!hostPlayer || hostPlayer.id !== currentPlayer.id) {
       return;
     }
@@ -150,7 +153,7 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
   const handleToggleReady = () => {
     if (!currentPlayer || !room) return;
     
-    const player = room.players.find(p => p.id === currentPlayer.id);
+    const player = room.players.find((p: any) => p.id === currentPlayer.id);
     if (!player) return;
 
     updatePlayerReadyMutation.mutate({
@@ -160,10 +163,10 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
   };
 
   // Check if current player is host
-  const isHost = room?.players.find(p => p.id === currentPlayer?.id)?.isHost ?? false;
+  const isHost = room?.players.find((p: any) => p.id === currentPlayer?.id)?.isHost ?? false;
 
   // Convert game state players to PlayerReadyStatus format
-  const playerReadyStatuses: PlayerReadyStatus[] = room?.players.map(player => ({
+  const playerReadyStatuses: PlayerReadyStatus[] = room?.players.map((player: any) => ({
     playerId: player.id,
     name: player.name,
     isHost: player.isHost,
@@ -221,7 +224,7 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
         
         <PlayerReadyList
           players={playerReadyStatuses}
-          hostId={room.players.find(p => p.isHost)?.id ?? ''}
+          hostId={room.players.find((p: any) => p.isHost)?.id ?? ''}
         />
       </div>
 
@@ -232,7 +235,7 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
             onClick={handleToggleReady}
             disabled={updatePlayerReadyMutation.isPending}
             className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              room.players.find(p => p.id === currentPlayer.id)?.isReady
+              room.players.find((p: any) => p.id === currentPlayer.id)?.isReady
                 ? 'bg-[#22c55e] hover:bg-[#16a34a] text-white'
                 : 'bg-[#f59e0b] hover:bg-[#d97706] text-white'
             } ${updatePlayerReadyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -243,7 +246,7 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
                 <span>Updating...</span>
               </div>
             ) : (
-              room.players.find(p => p.id === currentPlayer.id)?.isReady 
+              room.players.find((p: any) => p.id === currentPlayer.id)?.isReady 
                 ? 'Mark as Not Ready' 
                 : 'Mark as Ready'
             )}

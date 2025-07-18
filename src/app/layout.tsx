@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { SessionExpirationProvider } from "~/components/providers/SessionExpirationProvider";
+import { GlobalSSEProvider } from "~/context/GlobalSSEContext";
 
 export const metadata: Metadata = {
   title: "Avalon - The Ultimate Online Experience",
@@ -26,9 +27,11 @@ export default function RootLayout({
       </head>
       <body>
         <TRPCReactProvider>
-          <SessionExpirationProvider>
-            {children}
-          </SessionExpirationProvider>
+          <GlobalSSEProvider>
+            <SessionExpirationProvider>
+              {children}
+            </SessionExpirationProvider>
+          </GlobalSSEProvider>
         </TRPCReactProvider>
       </body>
     </html>

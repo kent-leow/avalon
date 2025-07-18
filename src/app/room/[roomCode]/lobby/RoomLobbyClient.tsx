@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { waitForSession, verifyClientSession } from '~/lib/session-sync';
 import { getSession, clearSession, extendSession } from '~/lib/session';
-import { useSSERealtimeRoom } from '~/hooks/useSSERealtimeRoom';
+import { useOptimizedRealtimeRoom } from '~/hooks/useOptimizedRealtimeRoom';
 import { api } from '~/trpc/react';
 import StartGameSection from './StartGameSection';
 import LobbySharing from './LobbySharing';
@@ -25,13 +25,13 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   // tRPC mutation for leaving room
   const leaveRoomMutation = api.room.leaveRoom.useMutation();
 
-  // Use real-time room hook instead of polling
+  // Use optimized real-time room hook instead of individual SSE subscription
   const {
     roomState,
     isConnected,
     connectionState,
     updatePlayerReady,
-  } = useSSERealtimeRoom({
+  } = useOptimizedRealtimeRoom({
     roomCode,
     playerId: session?.id || '',
     playerName: session?.name || '',
@@ -335,7 +335,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
                 <PlayerManagementSection
                   roomId={roomState.room.id}
                   roomCode={roomCode}
-                  players={roomState.room.players.map(p => ({
+                  players={roomState.room.players.map((p: any) => ({
                     ...p,
                     joinedAt: new Date(),
                     roomId: roomState.room!.id,
