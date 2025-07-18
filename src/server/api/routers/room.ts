@@ -744,11 +744,48 @@ export const roomRouter = createTRPCRouter({
       });
       
       // Valid settings requirement
-      const roleValidation = validateRoleConfiguration(room.players.length, settings.characters);
+      let roleValidation: { valid: boolean; errors: string[] } = { valid: true, errors: [] };
+      try {
+        // Ensure settings.characters exists and is valid
+        const characters = settings.characters ?? [];
+        
+        if (characters.length === 0) {
+          // Use default role configuration if no characters are set
+          const { getStandardRoleConfiguration } = await import("~/lib/role-assignment");
+          const defaultCharacters = getStandardRoleConfiguration(room.players.length);
+          roleValidation = validateRoleConfiguration(room.players.length, defaultCharacters);
+        } else {
+          // Convert character names to role IDs if needed
+          const roleIds = characters.map((char: string) => {
+            // Handle common character name mappings
+            const nameToId: Record<string, string> = {
+              'loyal': 'servant',
+              'loyal servant of arthur': 'servant',
+              'loyal servant': 'servant',
+              'servant of arthur': 'servant',
+              'minion of mordred': 'minion',
+            };
+            
+            const lowercaseChar = char.toLowerCase();
+            return nameToId[lowercaseChar] || lowercaseChar;
+          });
+          
+          roleValidation = validateRoleConfiguration(room.players.length, roleIds);
+        }
+      } catch (error) {
+        console.error("Error validating role configuration:", error);
+        roleValidation = { 
+          valid: false, 
+          errors: [`Configuration error: ${error instanceof Error ? error.message : 'Unknown error'}`] 
+        };
+      }
+      
       requirements.push({
         id: 'valid-settings',
         name: 'Valid Game Settings',
-        description: 'Character configuration is valid',
+        description: roleValidation.valid 
+          ? 'Character configuration is valid' 
+          : `Issues: ${roleValidation.errors.join(', ')}`,
         status: roleValidation.valid ? 'satisfied' : 'failed',
         required: true,
       });

@@ -9,6 +9,7 @@ import PlayerReadyList from "./PlayerReadyList";
 import StartGameButton from "./StartGameButton";
 import GameStartStatus from "./GameStartStatus";
 import { type GameStartStatus as GameStartStatusType, type PlayerReadyStatus } from "~/types/game-state";
+import { useSSERealtimeRoom } from "~/hooks/useSSERealtimeRoom";
 
 interface StartGameSectionProps {
   roomId: string;
@@ -16,40 +17,55 @@ interface StartGameSectionProps {
   className?: string;
 }
 
-export default function StartGameSection({
-  roomId,
-  roomCode,
-  className = "",
-}: StartGameSectionProps) {
+export default function StartGameSection({ roomId, roomCode, className }: StartGameSectionProps) {
   const router = useRouter();
-  const session = getSession();
-  
+  const [session, setSession] = useState<any>(null);
   const [gameStartStatus, setGameStartStatus] = useState<GameStartStatusType>({
     status: 'idle',
     progress: 0,
     message: '',
   });
 
-  // Queries
-  const { data: gameState, refetch: refetchGameState } = api.room.getGameState.useQuery(
+  // Use SSE for real-time updates instead of polling
+  const {
+    roomState,
+  } = useSSERealtimeRoom({
+    roomCode,
+    playerId: session?.id || '',
+    playerName: session?.name || '',
+    enabled: !!session,
+  });
+
+  // Extract room and game state from room state
+  const room = roomState.room;
+  const gameState = room?.gameState;
+
+  // Fetch start requirements once on mount, then rely on SSE for updates
+  const { data: startRequirements } = api.room.checkStartRequirements.useQuery(
     { roomId },
     {
-      refetchInterval: 2000, // Poll every 2 seconds for real-time updates
-      enabled: !!roomId,
+      refetchOnMount: true,
+      refetchOnWindowFocus: false,
+      refetchInterval: false, // No polling - use SSE instead
     }
   );
 
-  const { data: startRequirements, refetch: refetchStartRequirements } = api.room.checkStartRequirements.useQuery(
-    { roomId },
-    {
-      refetchInterval: 2000, // Poll every 2 seconds for real-time updates
-      enabled: !!roomId,
-    }
-  );
+  // Load session on mount
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const sessionData = await getSession();
+        setSession(sessionData);
+      } catch (error) {
+        console.error('Failed to load session:', error);
+      }
+    };
+    loadSession();
+  }, []);
 
   // Get current player info from session
-  const currentPlayer = gameState && session 
-    ? gameState.players.find(p => p.name === session.name) // Find by name since session ID might not match player ID
+  const currentPlayer = room && session 
+    ? room.players.find(p => p.name === session.name) // Find by name since session ID might not match player ID
     : null;
 
   // Mutations
@@ -103,17 +119,15 @@ export default function StartGameSection({
 
   const updatePlayerReadyMutation = api.room.updatePlayerReady.useMutation({
     onSuccess: () => {
-      // Refetch data to update UI
-      refetchGameState();
-      refetchStartRequirements();
+      // No need to refetch - SSE will handle updates
     },
   });
 
   // Handle game start
   const handleStartGame = () => {
-    if (!currentPlayer || !gameState) return;
+    if (!currentPlayer || !room) return;
     
-    const hostPlayer = gameState.players.find(p => p.isHost);
+    const hostPlayer = room.players.find(p => p.isHost);
     if (!hostPlayer || hostPlayer.id !== currentPlayer.id) {
       return;
     }
@@ -126,9 +140,9 @@ export default function StartGameSection({
 
   // Handle player ready toggle
   const handleToggleReady = () => {
-    if (!currentPlayer || !gameState) return;
+    if (!currentPlayer || !room) return;
     
-    const player = gameState.players.find(p => p.id === currentPlayer.id);
+    const player = room.players.find(p => p.id === currentPlayer.id);
     if (!player) return;
 
     updatePlayerReadyMutation.mutate({
@@ -138,10 +152,10 @@ export default function StartGameSection({
   };
 
   // Check if current player is host
-  const isHost = gameState?.players.find(p => p.id === currentPlayer?.id)?.isHost ?? false;
+  const isHost = room?.players.find(p => p.id === currentPlayer?.id)?.isHost ?? false;
 
   // Convert game state players to PlayerReadyStatus format
-  const playerReadyStatuses: PlayerReadyStatus[] = gameState?.players.map(player => ({
+  const playerReadyStatuses: PlayerReadyStatus[] = room?.players.map(player => ({
     playerId: player.id,
     name: player.name,
     isHost: player.isHost,
@@ -158,7 +172,7 @@ export default function StartGameSection({
   const allPlayersReady = playerReadyStatuses.every(p => p.isReady);
   const settingsValid = requirements.find(r => r.id === 'valid-settings')?.status === 'satisfied';
   
-  // Handle game phase changes
+  // Handle game phase changes via SSE
   useEffect(() => {
     if (gameState?.phase === 'roleReveal') {
       // Game has started, redirect to game page
@@ -166,7 +180,7 @@ export default function StartGameSection({
     }
   }, [gameState?.phase, router, roomCode]);
 
-  if (!gameState) {
+  if (roomState.isLoading || !room) {
     return (
       <div className={`bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] rounded-2xl p-8 ${className}`}>
         <div className="flex items-center justify-center py-8">
@@ -199,7 +213,7 @@ export default function StartGameSection({
         
         <PlayerReadyList
           players={playerReadyStatuses}
-          hostId={gameState.players.find(p => p.isHost)?.id ?? ''}
+          hostId={room.players.find(p => p.isHost)?.id ?? ''}
         />
       </div>
 
@@ -210,7 +224,7 @@ export default function StartGameSection({
             onClick={handleToggleReady}
             disabled={updatePlayerReadyMutation.isPending}
             className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-              gameState.players.find(p => p.id === currentPlayer.id)?.isReady
+              room.players.find(p => p.id === currentPlayer.id)?.isReady
                 ? 'bg-[#22c55e] hover:bg-[#16a34a] text-white'
                 : 'bg-[#f59e0b] hover:bg-[#d97706] text-white'
             } ${updatePlayerReadyMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -221,7 +235,7 @@ export default function StartGameSection({
                 <span>Updating...</span>
               </div>
             ) : (
-              gameState.players.find(p => p.id === currentPlayer.id)?.isReady 
+              room.players.find(p => p.id === currentPlayer.id)?.isReady 
                 ? 'Mark as Not Ready' 
                 : 'Mark as Ready'
             )}
