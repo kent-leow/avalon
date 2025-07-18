@@ -81,11 +81,43 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     { roomCode },
     { 
       enabled: !!roomCode && sessionChecked,
-      refetchInterval: 2000, // Poll every 2 seconds for real-time updates
-      retry: 3, // Retry failed requests
+      refetchInterval: (query) => {
+        // Stop polling if there's a persistent error
+        if (query?.state?.error) return false;
+        return 2000; // Poll every 2 seconds for real-time updates
+      },
+      retry: (failureCount, error: any) => {
+        // Don't retry if room doesn't exist or is expired
+        if (error?.message?.includes('Room not found') || 
+            error?.message?.includes('expired') ||
+            error?.data?.code === 'NOT_FOUND') {
+          return false;
+        }
+        return failureCount < 3;
+      },
       retryDelay: 1000, // Wait 1 second between retries
     }
   );
+
+  // Handle persistent room errors - clear session and redirect
+  useEffect(() => {
+    if (error && sessionChecked) {
+      console.log('Room loading error:', error);
+      
+      // Check for room not found, expired, or database errors
+      const isRoomNotFound = error.message?.includes('Room not found') || 
+                           error.message?.includes('expired') ||
+                           error.data?.code === 'NOT_FOUND' ||
+                           error.data?.httpStatus === 500;
+      
+      if (isRoomNotFound) {
+        console.log('Room not found or error - clearing session and redirecting');
+        clearSession();
+        router.push(`/room/${roomCode}`);
+        return;
+      }
+    }
+  }, [error, sessionChecked, roomCode, router]);
 
   // Extend session on successful data fetch
   useEffect(() => {
@@ -111,6 +143,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
           const retryPlayerInRoom = roomData.players.find((p: any) => p.name === session.name);
           if (!retryPlayerInRoom) {
             console.log('Session player still not found after extended wait, redirecting to join');
+            clearSession();
             router.push(`/room/${roomCode}`);
           }
         }, 5000); // Wait 5 seconds for database sync
@@ -132,12 +165,8 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   }
 
   if (error || !roomData) {
-    // If room has expired, clear session and redirect
-    if (error?.message?.includes('expired')) {
-      clearSession();
-      router.push(`/room/${roomCode}`);
-      return null;
-    }
+    // Clear session for any error since we already handled it above
+    clearSession();
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">

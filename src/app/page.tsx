@@ -13,7 +13,10 @@ export default function Home() {
     if (session?.roomCode) {
       // Check if session is expired before redirecting
       if (new Date() > new Date(session.expiresAt)) {
-        // Session expired, don't redirect
+        // Session expired, clear it and don't redirect
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('avalon_player_session');
+        }
         return;
       }
       // User has an active session, redirect to their room
