@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PlayerNameInput } from './PlayerNameInput';
 import { RoomJoinStatus } from './RoomJoinStatus';
 import { validateRoomCode } from '~/lib/room-code-generator';
@@ -22,6 +23,7 @@ export function JoinRoomForm({
   onJoinError, 
   className = '' 
 }: JoinRoomFormProps) {
+  const router = useRouter();
   const [enteredRoomCode, setEnteredRoomCode] = useState(roomCode);
   const [playerName, setPlayerName] = useState('');
   const [joinStatus, setJoinStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -92,6 +94,14 @@ export function JoinRoomForm({
     onError: (error) => {
       console.error('Error joining room:', error);
       const errorMessage = error.message || 'Failed to join room. Please try again.';
+      
+      // Redirect to home for room not found errors
+      if (errorMessage.includes('Room not found')) {
+        console.log('Room not found, redirecting to home');
+        router.replace('/');
+        return;
+      }
+      
       setError(errorMessage);
       setJoinStatus('error');
       onJoinError(errorMessage);

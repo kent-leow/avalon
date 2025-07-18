@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { JoinRoomForm } from './JoinRoomForm';
 import { getSession } from '~/lib/session';
+import { validateRoomCode } from '~/lib/room-code-generator';
 import { api } from '~/trpc/react';
 import { type Room, type Player } from '~/types/room';
 
@@ -17,11 +18,23 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   const [shouldCheckRoom, setShouldCheckRoom] = useState(false);
   const [hasValidSession, setHasValidSession] = useState(false);
 
+  // Check room code validity and redirect if invalid
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Validate room code format immediately
+    if (!validateRoomCode(roomCode)) {
+      console.log('Invalid room code format, redirecting to home:', roomCode);
+      router.replace('/');
+      return;
+    }
+  }, [roomCode, router, mounted]);
+
   // Check room data to determine game state
   const { data: roomData, isLoading, error } = api.room.getRoomInfo.useQuery(
     { roomCode },
     { 
-      enabled: shouldCheckRoom && mounted,
+      enabled: shouldCheckRoom && mounted && validateRoomCode(roomCode),
       retry: 1,
     }
   );
@@ -34,7 +47,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
     if (!mounted) return;
     
     const session = getSession();
-    if (session?.roomCode === roomCode) {
+    if (session?.roomCode === roomCode && validateRoomCode(roomCode)) {
       setHasValidSession(true);
       setShouldCheckRoom(true);
     } else {
@@ -69,6 +82,13 @@ export function RoomClient({ roomCode }: RoomClientProps) {
         router.push(`/room/${roomCode}/game`);
       }
     } else if (error && hasValidSession) {
+      // Handle specific error cases
+      if (error?.message?.includes('Room not found')) {
+        console.log('Room not found, redirecting to home');
+        router.replace('/');
+        return;
+      }
+      
       // Room query failed (likely expired), clear session and show join form
       console.log('Room query failed, clearing session:', error.message);
       const { clearSession } = require('~/lib/session');
