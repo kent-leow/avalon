@@ -27,101 +27,101 @@ describe('PhaseController', () => {
       render(<PhaseController {...defaultProps} />);
       
       expect(screen.getByTestId('lobby-phase')).toBeInTheDocument();
-      expect(screen.getByText('Lobby')).toBeInTheDocument();
-      expect(screen.getByText('Waiting for players to join and ready up')).toBeInTheDocument();
+      expect(screen.getAllByText('Lobby')).toHaveLength(2); // Header and phase content
+      expect(screen.getAllByText('Waiting for players to join and ready up')).toHaveLength(2); // Header and phase content
     });
 
     it('renders role reveal phase correctly', () => {
-      render(
-        <PhaseController 
-          {...defaultProps} 
-          currentPhase="roleReveal"
-        />
-      );
+      const propsWithRoleReveal = {
+        ...defaultProps,
+        currentPhase: 'roleReveal' as const
+      };
+      
+      render(<PhaseController {...propsWithRoleReveal} />);
       
       expect(screen.getByTestId('role-reveal-phase')).toBeInTheDocument();
-      expect(screen.getByText('Role Reveal')).toBeInTheDocument();
-      expect(screen.getByText('Players are learning their roles')).toBeInTheDocument();
+      expect(screen.getAllByText('Role Reveal')).toHaveLength(2); // Header and phase content
+      expect(screen.getAllByText('Players are learning their roles')).toHaveLength(2); // Header and phase content
     });
 
     it('renders voting phase correctly', () => {
-      render(
-        <PhaseController 
-          {...defaultProps} 
-          currentPhase="voting"
-        />
-      );
+      const propsWithVoting = {
+        ...defaultProps,
+        currentPhase: 'voting' as const
+      };
+      
+      render(<PhaseController {...propsWithVoting} />);
       
       expect(screen.getByTestId('voting-phase')).toBeInTheDocument();
-      expect(screen.getByText('Team Voting')).toBeInTheDocument();
+      expect(screen.getAllByText('Team Voting')).toHaveLength(2); // Header and phase content
       expect(screen.getByTestId('approve-vote-button')).toBeInTheDocument();
       expect(screen.getByTestId('reject-vote-button')).toBeInTheDocument();
     });
 
     it('renders mission select phase correctly', () => {
-      render(
-        <PhaseController 
-          {...defaultProps} 
-          currentPhase="missionSelect"
-        />
-      );
+      const propsWithMissionSelect = {
+        ...defaultProps,
+        currentPhase: 'missionSelect' as const
+      };
+      
+      render(<PhaseController {...propsWithMissionSelect} />);
       
       expect(screen.getByTestId('mission-select-phase')).toBeInTheDocument();
-      expect(screen.getByText('Mission Selection')).toBeInTheDocument();
-      expect(screen.getByText('The leader is selecting team members')).toBeInTheDocument();
+      expect(screen.getAllByText('Mission Selection')).toHaveLength(2); // Header and phase content
+      expect(screen.getAllByText('The leader is selecting team members')).toHaveLength(2); // Header and phase content
     });
 
     it('renders mission vote phase correctly', () => {
-      render(
-        <PhaseController 
-          {...defaultProps} 
-          currentPhase="missionVote"
-        />
-      );
+      const propsWithMissionVote = {
+        ...defaultProps,
+        currentPhase: 'missionVote' as const
+      };
+      
+      render(<PhaseController {...propsWithMissionVote} />);
       
       expect(screen.getByTestId('mission-vote-phase')).toBeInTheDocument();
-      expect(screen.getByText('Mission Vote')).toBeInTheDocument();
+      expect(screen.getAllByText('Mission Vote')).toHaveLength(3); // Header, phase content, and button label
       expect(screen.getByTestId('success-vote-button')).toBeInTheDocument();
       expect(screen.getByTestId('failure-vote-button')).toBeInTheDocument();
     });
 
     it('renders mission result phase correctly', () => {
-      render(
-        <PhaseController 
-          {...defaultProps} 
-          currentPhase="missionResult"
-        />
-      );
+      const propsWithMissionResult = {
+        ...defaultProps,
+        currentPhase: 'missionResult' as const
+      };
+      
+      render(<PhaseController {...propsWithMissionResult} />);
       
       expect(screen.getByTestId('mission-result-phase')).toBeInTheDocument();
-      expect(screen.getByText('Mission Result')).toBeInTheDocument();
-      expect(screen.getByText('Mission results are being revealed')).toBeInTheDocument();
+      expect(screen.getAllByText('Mission Result')).toHaveLength(2); // Header and phase content
+      expect(screen.getAllByText('Mission results are being revealed')).toHaveLength(2); // Header and phase content
     });
 
     it('renders assassin attempt phase correctly', () => {
-      render(
-        <PhaseController 
-          {...defaultProps} 
-          currentPhase="assassinAttempt"
-        />
-      );
+      const propsWithAssassin = {
+        ...defaultProps,
+        currentPhase: 'assassinAttempt' as const
+      };
+      
+      render(<PhaseController {...propsWithAssassin} />);
       
       expect(screen.getByTestId('assassin-attempt-phase')).toBeInTheDocument();
-      expect(screen.getByText('Assassin Attempt')).toBeInTheDocument();
-      expect(screen.getByText('The assassin is making their attempt')).toBeInTheDocument();
+      expect(screen.getAllByText('Assassin Attempt')).toHaveLength(2); // Header and phase content
+      expect(screen.getAllByText('The assassin is making their attempt')).toHaveLength(2); // Header and phase content
     });
 
     it('renders game over phase correctly', () => {
-      render(
-        <PhaseController 
-          {...defaultProps} 
-          currentPhase="gameOver"
-        />
-      );
+      const propsWithGameOver = {
+        ...defaultProps,
+        currentPhase: 'gameOver' as const
+      };
+      
+      render(<PhaseController {...propsWithGameOver} />);
       
       expect(screen.getByTestId('game-over-phase')).toBeInTheDocument();
-      expect(screen.getByText('Game Over')).toBeInTheDocument();
-      expect(screen.getByText('The game has ended')).toBeInTheDocument();
+      expect(screen.getAllByText('Game Over')).toHaveLength(2); // Header and phase content
+      expect(screen.getAllByText('The game has ended')).toHaveLength(2); // Header and phase content
       expect(screen.getByTestId('new-game-button')).toBeInTheDocument();
     });
   });
@@ -130,8 +130,8 @@ describe('PhaseController', () => {
     it('displays correct phase information', () => {
       render(<PhaseController {...defaultProps} />);
       
-      expect(screen.getByText('Lobby')).toBeInTheDocument();
-      expect(screen.getByText('Waiting for players to join and ready up')).toBeInTheDocument();
+      expect(screen.getAllByText('Lobby')).toHaveLength(2); // Header and phase content
+      expect(screen.getAllByText('Waiting for players to join and ready up')).toHaveLength(2); // Header and phase content
       expect(screen.getByText('Room: TEST123')).toBeInTheDocument();
       expect(screen.getByText('Round: 1')).toBeInTheDocument();
       expect(screen.getByText('Players: 5')).toBeInTheDocument();

@@ -1,13 +1,12 @@
 /**
  * Real-time Event Emitter Integration for TRPC
- * Bridges TRPC mutations with Socket.IO real-time events
+ * Bridges TRPC mutations with SSE real-time events
  */
 
-import { getSocketManager } from '~/server/socket';
+import * as SSEEvents from '~/server/sse-events';
 import type { PrismaClient } from '@prisma/client';
 import type { GameState } from '~/types/game-state';
-import { createRealTimeEvent } from '~/lib/real-time-sync-utils';
-import type { RealTimeEvent, RealTimeEventType } from '~/types/real-time-sync';
+import type { RealTimeEventType } from '~/types/real-time-sync';
 
 /**
  * Emit a real-time event to a specific room
@@ -18,21 +17,7 @@ export function emitRoomEvent(
   payload: any,
   playerId?: string
 ) {
-  const socketManager = getSocketManager();
-  if (!socketManager) {
-    console.warn('[RealTime] Socket manager not available, skipping event emission');
-    return;
-  }
-
-  const event = createRealTimeEvent(
-    eventType,
-    payload,
-    playerId || 'system',
-    roomCode
-  );
-
-  socketManager.emitToRoom(roomCode, event);
-  console.log(`[RealTime] Emitted ${eventType} to room ${roomCode}`);
+  SSEEvents.emitRoomEvent(roomCode, eventType, payload, playerId);
 }
 
 /**
@@ -44,62 +29,14 @@ export function emitPlayerEvent(
   eventType: RealTimeEventType,
   payload: any
 ) {
-  const socketManager = getSocketManager();
-  if (!socketManager) {
-    console.warn('[RealTime] Socket manager not available, skipping event emission');
-    return;
-  }
-
-  const event = createRealTimeEvent(
-    eventType,
-    payload,
-    playerId,
-    roomCode
-  );
-
-  socketManager.emitToPlayer(playerId, roomCode, event);
-  console.log(`[RealTime] Emitted ${eventType} to player ${playerId} in room ${roomCode}`);
+  SSEEvents.emitPlayerEvent(playerId, roomCode, eventType, payload);
 }
 
 /**
  * Get room state and emit it to all connected players
  */
-export async function syncRoomState(roomId: string, roomCode: string, db: any) {
-  try {
-    const room = await db.room.findUnique({
-      where: { id: roomId },
-      include: { players: true },
-    });
-
-    if (!room) return;
-
-    const socketManager = getSocketManager();
-    if (!socketManager) return;
-
-    const onlinePlayerIds = socketManager.getOnlinePlayersInRoom(roomCode);
-
-    const roomStatePayload = {
-      room: {
-        id: room.id,
-        roomCode: room.code,
-        phase: room.phase,
-        players: room.players.map((player: any) => ({
-          id: player.id,
-          name: player.name,
-          isHost: player.isHost,
-          isReady: player.isReady,
-          isOnline: onlinePlayerIds.includes(player.id),
-        })),
-        settings: room.settings,
-        gameState: room.gameState,
-      },
-      timestamp: new Date(),
-    };
-
-    emitRoomEvent(roomCode, 'room_state_sync', roomStatePayload);
-  } catch (error) {
-    console.error('[RealTime] Error syncing room state:', error);
-  }
+export async function syncRoomState(roomId: string, roomCode: string, db: PrismaClient) {
+  return SSEEvents.syncRoomState(roomId, roomCode, db);
 }
 
 /**
@@ -110,22 +47,9 @@ export async function notifyPlayerJoined(
   roomCode: string,
   playerId: string,
   playerName: string,
-  db: any
+  db: PrismaClient
 ) {
-  // Emit player joined event
-  emitRoomEvent(
-    roomCode,
-    'player_joined',
-    {
-      playerId,
-      playerName,
-      timestamp: new Date(),
-    },
-    playerId
-  );
-
-  // Sync full room state
-  await syncRoomState(roomId, roomCode, db);
+  return SSEEvents.notifyPlayerJoined(roomId, roomCode, playerId, playerName, db);
 }
 
 /**
@@ -136,21 +60,9 @@ export async function notifyPlayerLeft(
   roomCode: string,
   playerId: string,
   playerName: string,
-  db: any
+  db: PrismaClient
 ) {
-  // Emit player left event
-  emitRoomEvent(
-    roomCode,
-    'player_left',
-    {
-      playerId,
-      playerName,
-      timestamp: new Date(),
-    }
-  );
-
-  // Sync full room state
-  await syncRoomState(roomId, roomCode, db);
+  return SSEEvents.notifyPlayerLeft(roomId, roomCode, playerId, playerName, db);
 }
 
 /**
@@ -162,17 +74,7 @@ export function notifyPlayerReadyChanged(
   playerName: string,
   isReady: boolean
 ) {
-  emitRoomEvent(
-    roomCode,
-    'player_ready_changed',
-    {
-      playerId,
-      playerName,
-      isReady,
-      timestamp: new Date(),
-    },
-    playerId
-  );
+  return SSEEvents.notifyPlayerReadyChanged(roomCode, playerId, playerName, isReady);
 }
 
 /**
@@ -184,16 +86,7 @@ export function notifyGamePhaseChanged(
   previousPhase: string,
   gameState: any
 ) {
-  emitRoomEvent(
-    roomCode,
-    'game_phase_changed',
-    {
-      newPhase,
-      previousPhase,
-      gameState,
-      timestamp: new Date(),
-    }
-  );
+  return SSEEvents.notifyGamePhaseChanged(roomCode, newPhase, previousPhase, gameState);
 }
 
 /**
@@ -205,20 +98,7 @@ export async function notifyGameStarted(
   gameState: GameState,
   db: PrismaClient
 ): Promise<void> {
-  const room = await db.room.findUnique({
-    where: { id: roomId },
-    include: {
-      players: true,
-    },
-  });
-
-  if (!room) return;
-
-  emitRoomEvent(roomCode, 'game_phase_changed', {
-    gameState,
-    phase: 'roleReveal',
-    startedAt: new Date(),
-  });
+  return SSEEvents.notifyGameStarted(roomId, roomCode, gameState, db);
 }
 
 /**
@@ -231,18 +111,7 @@ export function notifyVoteCast(
   choice: 'approve' | 'reject',
   progress: any
 ) {
-  emitRoomEvent(
-    roomCode,
-    'vote_cast',
-    {
-      playerId,
-      playerName,
-      choice,
-      progress,
-      timestamp: new Date(),
-    },
-    playerId
-  );
+  return SSEEvents.notifyVoteCast(roomCode, playerId, playerName, choice, progress);
 }
 
 /**
@@ -253,18 +122,35 @@ export async function notifySettingsChanged(
   roomCode: string,
   settings: any,
   changedBy: string,
-  db: any
+  db: PrismaClient
 ) {
-  emitRoomEvent(
-    roomCode,
-    'settings_changed',
-    {
-      settings,
-      changedBy,
-      timestamp: new Date(),
-    }
-  );
+  return SSEEvents.notifySettingsChanged(roomId, roomCode, settings, changedBy, db);
+}
 
-  // Sync full room state to ensure consistency
-  await syncRoomState(roomId, roomCode, db);
+/**
+ * Get online players in a room
+ */
+export function getOnlinePlayersInRoom(roomCode: string): string[] {
+  return SSEEvents.getOnlinePlayersInRoom(roomCode);
+}
+
+/**
+ * Subscribe a player to room events
+ */
+export function subscribeToRoom(roomCode: string, playerId: string, sessionId: string): void {
+  return SSEEvents.subscribeToRoom(roomCode, playerId, sessionId);
+}
+
+/**
+ * Unsubscribe a player from room events
+ */
+export function unsubscribeFromRoom(sessionId: string): void {
+  return SSEEvents.unsubscribeFromRoom(sessionId);
+}
+
+/**
+ * Get all active subscribers for a room
+ */
+export function getRoomSubscribers(roomCode: string): string[] {
+  return SSEEvents.getRoomSubscribers(roomCode);
 }

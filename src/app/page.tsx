@@ -46,6 +46,7 @@ export default function Home() {
           <Link
             href="/create-room"
             className="group bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8 hover:border-blue-500/50 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+            data-testid="create-room-button"
           >
             <div className="text-center space-y-4">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500/20 rounded-full group-hover:bg-blue-500/30 transition-colors">

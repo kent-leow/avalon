@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { getSession } from '~/lib/session';
 import { type PlayerSession } from '~/lib/session';
 import { useSSERealtimeRoom } from '~/hooks/useSSERealtimeRoom';
+import { GameEngine } from '~/components/game-engine';
+import { type GameState, type GamePhase } from '~/types/game-state';
 
 interface PageProps {
   params: Promise<{
@@ -101,72 +103,32 @@ function GameClient({ roomCode }: { roomCode: string }) {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547]">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent mb-4">
-              Game in Progress
-            </h1>
-            <div className="flex items-center justify-center gap-4">
-              <div className="text-lg text-slate-100 opacity-90">
-                Room Code: <span className="font-mono text-2xl">{roomCode}</span>
-              </div>
-              {/* Real-time connection indicator */}
-              <div className={`px-3 py-1 rounded-full text-xs flex items-center gap-2 ${
-                isConnected 
-                  ? 'bg-green-500/20 text-green-400' 
-                  : 'bg-yellow-500/20 text-yellow-400'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  isConnected ? 'bg-green-400' : 'bg-yellow-400'
-                } ${isConnected ? 'animate-pulse' : ''}`}></div>
-                {isConnected ? 'Live' : 'Reconnecting'}
-              </div>
-            </div>
-          </div>
+  // Create game state from room state
+  const gameState: GameState = {
+    phase: roomState.room.phase as GamePhase,
+    round: roomState.room.gameState?.round || 1,
+    leaderIndex: roomState.room.gameState?.leaderIndex || 0,
+    startedAt: roomState.room.gameState?.startedAt ? new Date(roomState.room.gameState.startedAt) : new Date(),
+    votes: roomState.room.gameState?.votes || [],
+    missions: roomState.room.gameState?.missions || [],
+    assassinAttempt: roomState.room.gameState?.assassinAttempt || undefined,
+  };
 
-          <div className="bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8 text-center">
-            <div className="text-2xl font-bold text-white mb-4">
-              Game Interface Coming Soon
-            </div>
-            <div className="text-slate-300 mb-6">
-              The game interface is under development. For now, you can return to the lobby.
-            </div>
-            <div className="space-y-4">
-              {/* Game state information */}
-              <div className="bg-[#1a1a2e]/60 rounded-lg p-4">
-                <div className="text-lg font-semibold text-white mb-2">Current Game State</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-slate-400">Phase:</span>
-                    <span className="text-white ml-2">{roomState.room.phase}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Players:</span>
-                    <span className="text-white ml-2">{roomState.room.players.length}</span>
-                  </div>
-                  {roomState.room.gameState && (
-                    <div className="sm:col-span-2">
-                      <span className="text-slate-400">Round:</span>
-                      <span className="text-white ml-2">{roomState.room.gameState.round || 0}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <button
-                onClick={() => router.push(`/room/${roomCode}/lobby`)}
-                className="bg-[#3d3d7a] hover:bg-[#4a4a96] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
-              >
-                Return to Lobby
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  return (
+    <GameEngine
+      roomCode={roomCode}
+      playerId={session?.id || ''}
+      playerName={session?.name || ''}
+      initialGameState={gameState}
+      onError={(error) => {
+        console.error('Game Engine Error:', error);
+        // Handle error - could show a toast or redirect
+      }}
+      onPhaseTransition={(fromPhase, toPhase) => {
+        console.log(`Phase transition: ${fromPhase} -> ${toPhase}`);
+        // Handle phase transition - could trigger analytics or other side effects
+      }}
+    />
   );
 }
 

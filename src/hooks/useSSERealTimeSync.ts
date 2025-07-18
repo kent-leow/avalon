@@ -5,19 +5,49 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { api } from '~/trpc/react';
 import type { 
   RealTimeEvent, 
   ConnectionState, 
-  QueuedAction, 
-  OptimisticUpdate,
-  PerformanceMetrics,
-  SyncConflict,
+  OptimisticUpdate, 
+  SyncConflict, 
   ConflictResolution,
+  PerformanceMetrics,
+  PlayerActivity,
+  RoomSyncState,
+  QueuedAction,
   UseRealTimeSync,
-  REAL_TIME_CONSTANTS 
 } from '~/types/real-time-sync';
-import { createConnectionState, createQueuedAction } from '~/lib/real-time-sync-utils';
+import { 
+  REAL_TIME_CONSTANTS,
+  createConnectionState,
+  getConnectionIndicator,
+  calculateLatency,
+  createRealTimeEvent,
+  createOptimisticUpdate,
+  createSyncConflict,
+  resolveConflict,
+  createPerformanceMetrics,
+  createPlayerActivity,
+  createRoomSyncState,
+} from '~/lib/real-time-sync-utils';
+
+// Hook Options Interface
+interface RealTimeSyncHookOptions {
+  enabled?: boolean;
+  reconnectOnError?: boolean;
+  maxRetries?: number;
+  retryDelay?: number;
+}
+
+// Update Payload Interface
+interface RealTimeUpdatePayload {
+  event: RealTimeEvent;
+  optimisticUpdate?: OptimisticUpdate;
+  shouldUpdateUI?: boolean;
+  metadata?: any;
+}
 
 interface UseSSERealTimeSyncOptions {
   roomCode: string;

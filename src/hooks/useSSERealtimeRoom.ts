@@ -83,20 +83,6 @@ export function useSSERealtimeRoom(options: UseRealtimeRoomOptions) {
           isLoading: false,
         }));
       },
-      onStarted: () => {
-        console.log('[SSE] Subscription started');
-        setConnectionState({
-          status: 'connected',
-          isConnected: true,
-        });
-      },
-      onStopped: () => {
-        console.log('[SSE] Subscription stopped');
-        setConnectionState({
-          status: 'disconnected',
-          isConnected: false,
-        });
-      },
     }
   );
 
@@ -261,22 +247,50 @@ export function useSSERealtimeRoom(options: UseRealtimeRoomOptions) {
     }
   }, []);
 
-  // Send event mutations
-  const sendRoomEventMutation = api.subscriptions.sendRoomEvent.useMutation();
-  const sendPlayerEventMutation = api.subscriptions.sendPlayerEvent.useMutation();
+  // Mutations for sending events
+  const updateReadyMutation = api.room.updatePlayerReady.useMutation();
+  const submitVoteMutation = api.room.submitVote.useMutation();
+  const submitMissionTeamMutation = api.room.submitMissionTeam.useMutation();
+  const submitMissionVoteMutation = api.room.submitMissionVote.useMutation();
 
   const sendEvent = useCallback(async (eventType: string, payload: any) => {
     try {
-      await sendRoomEventMutation.mutateAsync({
-        roomCode,
-        playerId,
-        eventType: eventType as any,
-        payload,
-      });
+      // Map event types to appropriate mutations
+      switch (eventType) {
+        case 'player_ready_changed':
+          await updateReadyMutation.mutateAsync({
+            playerId,
+            isReady: payload.isReady,
+          });
+          break;
+        case 'vote_cast':
+          await submitVoteMutation.mutateAsync({
+            roomId: roomState.room?.id || '',
+            playerId,
+            choice: payload.choice,
+          });
+          break;
+        case 'mission_team_selected':
+          await submitMissionTeamMutation.mutateAsync({
+            roomId: roomState.room?.id || '',
+            playerId,
+            teamIds: payload.selectedPlayers,
+          });
+          break;
+        case 'mission_vote_cast':
+          await submitMissionVoteMutation.mutateAsync({
+            roomId: roomState.room?.id || '',
+            playerId,
+            vote: payload.choice,
+          });
+          break;
+        default:
+          console.warn(`[SSE] Unknown event type: ${eventType}`);
+      }
     } catch (error) {
       console.error('[SSE] Failed to send event:', error);
     }
-  }, [roomCode, playerId, sendRoomEventMutation]);
+  }, [roomState.room?.id, playerId, updateReadyMutation, submitVoteMutation, submitMissionTeamMutation, submitMissionVoteMutation]);
 
   // Actions
   const updatePlayerReady = useCallback(async (isReady: boolean) => {
