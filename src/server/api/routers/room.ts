@@ -444,6 +444,7 @@ export const roomRouter = createTRPCRouter({
           isReady: p.isReady,
           joinedAt: p.joinedAt,
           roomId: p.roomId,
+          sessionId: p.sessionId,
         })),
         createdAt: room.createdAt,
         expiresAt: room.expiresAt,

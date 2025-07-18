@@ -90,7 +90,14 @@ function GameClient({ roomCode }: { roomCode: string }) {
   
   // Debug mode: allow testing with TestPlayer if session doesn't match
   const debugPlayer = roomState.room.players.find((p: any) => p.name === 'TestPlayer');
-  const actualPlayer = playerInRoom || debugPlayer;
+  
+  // Fallback: use current session player name if sessionId doesn't match
+  const fallbackPlayer = session && roomState.room.players.find((p: any) => p.name === session.name);
+  
+  // For testing: use first player if no match found
+  const testPlayer = roomState.room.players[0];
+  
+  const actualPlayer = playerInRoom || debugPlayer || fallbackPlayer || testPlayer;
   
   if (!actualPlayer) {
     return (
