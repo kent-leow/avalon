@@ -974,6 +974,15 @@ export const roomRouter = createTRPCRouter({
         where: { id: playerId },
       });
       
+      // Emit real-time event for player leaving
+      await notifyPlayerLeft(
+        room.id,
+        room.code,
+        playerId,
+        player.name,
+        ctx.db
+      );
+      
       return { success: true };
     }),
 

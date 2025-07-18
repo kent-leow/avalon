@@ -40,15 +40,23 @@ export default function StartGameSection({ roomId, roomCode, className }: StartG
   const room = roomState.room;
   const gameState = room?.gameState;
 
-  // Fetch start requirements once on mount, then rely on SSE for updates
-  const { data: startRequirements } = api.room.checkStartRequirements.useQuery(
+  // Fetch start requirements and refetch whenever room state changes
+  const { data: startRequirements, refetch: refetchStartRequirements } = api.room.checkStartRequirements.useQuery(
     { roomId },
     {
       refetchOnMount: true,
       refetchOnWindowFocus: false,
       refetchInterval: false, // No polling - use SSE instead
+      enabled: !!roomId,
     }
   );
+
+  // Refetch start requirements when room state changes via SSE
+  useEffect(() => {
+    if (room && roomState.lastUpdated) {
+      refetchStartRequirements();
+    }
+  }, [room?.settings, room?.players?.length, roomState.lastUpdated, refetchStartRequirements]);
 
   // Load session on mount
   useEffect(() => {
