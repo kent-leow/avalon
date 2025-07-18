@@ -1,28 +1,33 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from "next/link";
 import { getSession } from '~/lib/session';
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const noRedirect = searchParams.get('noRedirect') === 'true';
 
   useEffect(() => {
-    const session = getSession();
-    if (session?.roomCode) {
-      // Check if session is expired before redirecting
-      if (new Date() > new Date(session.expiresAt)) {
-        // Session expired, clear it and don't redirect
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('avalon_player_session');
+    // Only redirect if not explicitly disabled
+    if (!noRedirect) {
+      const session = getSession();
+      if (session?.roomCode) {
+        // Check if session is expired before redirecting
+        if (new Date() > new Date(session.expiresAt)) {
+          // Session expired, clear it and don't redirect
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('avalon_player_session');
+          }
+          return;
         }
-        return;
+        // User has an active session, redirect to their room
+        router.push(`/room/${session.roomCode}/lobby`);
       }
-      // User has an active session, redirect to their room
-      router.push(`/room/${session.roomCode}/lobby`);
     }
-  }, [router]);
+  }, [router, noRedirect]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center p-4">
@@ -57,7 +62,7 @@ export default function Home() {
 
           {/* Join Room */}
           <Link
-            href="/join"
+            href="/join?force=true"
             className="group bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8 hover:border-green-500/50 transition-all duration-300 hover:scale-105 hover:shadow-xl"
           >
             <div className="text-center space-y-4">
