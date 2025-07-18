@@ -78,9 +78,9 @@ jest.mock('~/trpc/react', () => ({
   }
 }));
 
-// Mock useSSERealtimeRoom hook
-jest.mock('~/hooks/useSSERealtimeRoom', () => ({
-  useSSERealtimeRoom: jest.fn(() => ({
+// Mock useOptimizedRealtimeRoom hook
+jest.mock('~/hooks/useOptimizedRealtimeRoom', () => ({
+  useOptimizedRealtimeRoom: jest.fn(() => ({
     roomState: {
       room: {
         id: 'test-room',
