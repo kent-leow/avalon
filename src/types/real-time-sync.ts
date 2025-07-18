@@ -37,6 +37,8 @@ export interface RealTimeEvent {
 export type RealTimeEventType = 
   | 'player_joined'
   | 'player_left'
+  | 'player_connected'
+  | 'player_disconnected'
   | 'player_reconnected'
   | 'vote_cast'
   | 'vote_retracted'
@@ -58,7 +60,11 @@ export type RealTimeEventType =
   | 'sync_conflict'
   | 'error_occurred'
   | 'voting_progress_updated'
-  | 'room_state_sync';
+  | 'room_state_sync'
+  | 'private_message'
+  | 'role_reveal'
+  | 'mission_result'
+  | 'vote_result';
 
 // Action Queue System
 export interface QueuedAction {

@@ -47,7 +47,7 @@ import {
   notifySettingsChanged,
   notifyGameStarted,
   syncRoomState
-} from "~/server/realtime-events";
+} from "~/server/sse-events";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
 import type { RoleKnowledge } from "~/types/role-knowledge";

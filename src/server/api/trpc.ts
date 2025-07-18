@@ -7,10 +7,18 @@
  * need to use are documented accordingly near the end.
  */
 import { initTRPC } from "@trpc/server";
+import { observable } from "@trpc/server/observable";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import EventEmitter from "events";
 
 import { db } from "~/server/db";
+
+// Event emitter for SSE-based subscriptions
+const eventEmitter = new EventEmitter();
+eventEmitter.setMaxListeners(100);
+
+export { eventEmitter };
 
 /**
  * 1. CONTEXT
@@ -27,6 +35,7 @@ import { db } from "~/server/db";
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   return {
     db,
+    eventEmitter,
     ...opts,
   };
 };
@@ -104,3 +113,8 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Public subscription procedure
+ */
+export const publicSubscription = t.procedure;

@@ -1,6 +1,7 @@
 import { roomRouter } from "~/server/api/routers/room";
 import { antiCheatSecurityRouter } from "~/server/api/routers/anti-cheat-security";
 import { tutorialSystemRouter } from "~/server/api/routers/tutorial-system";
+import { subscriptionsRouter } from "~/server/api/routers/subscriptions";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -12,6 +13,7 @@ export const appRouter = createTRPCRouter({
   room: roomRouter,
   antiCheatSecurity: antiCheatSecurityRouter,
   tutorialSystem: tutorialSystemRouter,
+  subscriptions: subscriptionsRouter,
 });
 
 // export type definition of API

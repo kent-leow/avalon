@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { waitForSession, verifyClientSession } from '~/lib/session-sync';
 import { getSession, clearSession, extendSession } from '~/lib/session';
-import { useRealtimeRoom } from '~/hooks/useRealtimeRoom';
+import { useSSERealtimeRoom } from '~/hooks/useSSERealtimeRoom';
 import StartGameSection from './StartGameSection';
 import LobbySharing from './LobbySharing';
 import PlayerManagementSection from './PlayerManagementSection';
@@ -26,7 +26,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     isConnected,
     connectionState,
     updatePlayerReady,
-  } = useRealtimeRoom({
+  } = useSSERealtimeRoom({
     roomCode,
     playerId: session?.id || '',
     playerName: session?.name || '',
