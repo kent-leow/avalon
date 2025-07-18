@@ -53,12 +53,7 @@ export function DynamicPhaseRouter({
     retryTransition,
     clearError,
     isPhaseValid,
-  } = usePhaseRouter({
-    initialPhase: currentPhase,
-    gameState,
-    players,
-    onError,
-  });
+  } = usePhaseRouter(currentPhase);
 
   // Initialize navigation guard
   const {
@@ -66,10 +61,11 @@ export function DynamicPhaseRouter({
     blockNavigation,
     unblockNavigation,
     backupState,
-  } = useNavigationGuard({
-    isGameActive: shouldBlockNavigation(currentPhase, gameState),
-    enabled: enableNavigationGuard,
-  });
+  } = useNavigationGuard(
+    shouldBlockNavigation(currentPhase, gameState),
+    true,
+    30000
+  );
 
   /**
    * Handle phase transition requests
@@ -242,14 +238,14 @@ export function DynamicPhaseRouter({
       {/* Error Handler */}
       {routerState.error && (
         <InvalidPhaseHandler
+          phase={routerState.currentPhase}
           error={routerState.error}
-          currentPhase={routerState.currentPhase}
           validPhases={validPhases}
-          gameState={gameState}
           onRetry={handleRetry}
+          onNavigateToPhase={handleForcePhase}
           onReset={handleReset}
-          onForcePhase={handleForcePhase}
-          allowManualRecovery={true}
+          autoRecovery={true}
+          autoRecoveryDelay={3000}
         />
       )}
 
