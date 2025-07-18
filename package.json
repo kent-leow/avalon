@@ -10,17 +10,14 @@
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "dev": "NODE_ENV=development tsx server-sse.ts",
-    "dev:websocket": "NODE_ENV=development tsx server.ts",
-    "dev:next": "next dev --turbo",
+    "dev": "next dev --turbo",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "postinstall": "prisma generate",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
-    "start": "tsx server-sse.ts",
-    "start:websocket": "tsx server.ts",
+    "start": "next start",
     "test": "jest",
     "test:watch": "jest --watch",
     "typecheck": "tsc --noEmit"
@@ -42,7 +39,6 @@
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
     "superjson": "^2.2.1",
-    "tsx": "^4.20.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {

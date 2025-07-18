@@ -1,29 +1,86 @@
-# Create T3 App
+# Avalon - Online Game
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+A real-time multiplayer implementation of The Resistance: Avalon using the T3 Stack.
 
-## What's next? How do I make an app with this?
+## Technology Stack
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+This project is built with:
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+- [Next.js](https://nextjs.org) - React framework with App Router
+- [tRPC](https://trpc.io) - End-to-end typesafe APIs with SSE subscriptions for real-time updates
+- [Prisma](https://prisma.io) - Database ORM
+- [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS framework
+- [TypeScript](https://www.typescriptlang.org) - Type safety
+- [Zod](https://zod.dev) - Schema validation
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+## Development
 
-## Learn More
+### Prerequisites
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+- Node.js 18+
+- Yarn package manager
+- PostgreSQL database
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+### Getting Started
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+1. Install dependencies:
+   ```bash
+   yarn install
+   ```
 
-## How do I deploy this?
+2. Set up your database:
+   ```bash
+   yarn db:push
+   ```
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+3. Start the development server:
+   ```bash
+   yarn dev
+   ```
+
+The app will be available at `http://localhost:3000` (or next available port).
+
+### Available Scripts
+
+- `yarn dev` - Start development server with Turbo mode
+- `yarn build` - Build for production
+- `yarn start` - Start production server
+- `yarn lint` - Run ESLint
+- `yarn typecheck` - Run TypeScript check
+- `yarn db:studio` - Open Prisma Studio
+
+## Real-time Features
+
+The application uses **tRPC subscriptions with Server-Sent Events (SSE)** for real-time communication instead of WebSockets, making it compatible with serverless deployments like Vercel.
+
+Key real-time features:
+- Live player joins/leaves
+- Real-time voting and mission selection
+- Game state synchronization
+- Connection status indicators
+
+## Deployment
+
+This project is optimized for deployment on [Vercel](https://vercel.com) with no additional configuration required for SSE-based real-time features.
+
+For other platforms, ensure your deployment supports:
+- Server-Sent Events (SSE)
+- Long-running API routes for subscriptions
+
+## Project Structure
+
+```
+src/
+├── app/           # Next.js App Router pages
+├── components/    # Reusable UI components
+├── hooks/         # Custom React hooks (SSE-based)
+├── lib/           # Utility functions
+├── server/        # tRPC API and database logic
+├── styles/        # Global styles
+├── trpc/          # tRPC configuration
+└── types/         # TypeScript type definitions
+```
+
+## Game Rules
+
+This implements the official rules of The Resistance: Avalon. See `docs/requirements/avalon-official-rules.md` for complete rule set.
