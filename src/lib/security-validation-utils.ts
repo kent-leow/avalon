@@ -4,24 +4,9 @@ import type {
   CheatAttempt, 
   SecurityEvent, 
   GameAction, 
-  PlayerAction, 
   SecurityMetrics,
-  CheatEvidence,
   SecurityAction,
-  SanitizedData,
-  SecurityBreach,
-  ValidationRule,
-  CheatDetectionRule,
-  ViolationType,
-  CheatType,
-  SecurityEventType
-} from "~/types/security-validation";
-
-import {
-  SECURITY_LEVELS,
-  VALIDATION_TIMEOUTS,
-  CHEAT_DETECTION_SENSITIVITY,
-  SECURITY_ACTIONS
+  SanitizedData
 } from "~/types/security-validation";
 
 /**
@@ -85,7 +70,7 @@ export const createMockSecurityEvent = (overrides?: Partial<SecurityEvent>): Sec
 });
 
 // Validation Functions
-export const validateAction = (action: GameAction, context: any): ValidationResult => {
+export const validateAction = (action: GameAction, _context: unknown): ValidationResult => {
   const violations: SecurityViolation[] = [];
   const validationRules = ['timing_check', 'state_validation', 'permission_check'];
   
@@ -371,7 +356,7 @@ export const formatSecurityMessage = (
 
 export const createAuditLogEntry = (
   event: SecurityEvent,
-  context: any = {}
+  context: Record<string, unknown> = {}
 ): SecurityEvent => {
   return {
     ...event,

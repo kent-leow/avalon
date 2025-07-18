@@ -13,7 +13,6 @@ import type {
   TutorialLevel,
   TutorialPhase,
   TutorialValidation,
-  TutorialCondition,
   TutorialSettings,
   TutorialStatistics,
   TutorialAchievement,
@@ -22,35 +21,26 @@ import type {
   PracticeSession,
   PracticeScenario,
   PracticeResults,
-  PracticeAIPlayer,
+  PracticePerformance,
   ContextualHelp,
   ContextualHelpTrigger,
   CharacterTutorialType,
   TutorialError,
   TutorialContext,
   TutorialNavigation,
-  TutorialActionType,
-  TutorialFeedbackType,
-  TutorialHint,
   TutorialAnimation,
   PracticeSettings,
   PracticeProgress,
   PracticeParticipant,
-  PracticeMistake,
   HelpContext,
   HelpContent,
   GameState
 } from '~/types/tutorial-system';
 
 import {
-  DEFAULT_TUTORIAL_SETTINGS,
-  DEFAULT_PRACTICE_SETTINGS,
   TUTORIAL_LEVELS,
   TUTORIAL_PHASES,
-  CHARACTER_TUTORIALS,
-  ACHIEVEMENT_TYPES,
-  FEEDBACK_TYPES,
-  ANIMATION_PRESETS
+  ACHIEVEMENT_TYPES
 } from '~/types/tutorial-system';
 
 // Tutorial System Management
@@ -68,7 +58,7 @@ export class TutorialSystemManager {
 
   // Tutorial Management
   getTutorial(id: string): Tutorial | null {
-    return this.tutorials.get(id) || null;
+    return this.tutorials.get(id) ?? null;
   }
 
   getTutorialsByLevel(level: TutorialLevel): Tutorial[] {
@@ -110,7 +100,7 @@ export class TutorialSystemManager {
     this.currentState = {
       isActive: true,
       currentTutorial: tutorial,
-      currentStep: tutorial.steps[0] || null,
+      currentStep: tutorial.steps[0] ?? null,
       stepProgress: 0,
       totalSteps: tutorial.steps.length,
       completedSteps: [],
@@ -157,7 +147,7 @@ export class TutorialSystemManager {
     // Move to next step
     const nextStepIndex = currentStepIndex + 1;
     if (nextStepIndex < this.currentState.currentTutorial.steps.length) {
-      this.currentState.currentStep = this.currentState.currentTutorial.steps[nextStepIndex] || null;
+      this.currentState.currentStep = this.currentState.currentTutorial.steps[nextStepIndex] ?? null;
       this.currentState.stepProgress = nextStepIndex;
     } else {
       // Tutorial completed
@@ -201,7 +191,7 @@ export class TutorialSystemManager {
 
     // Move to previous step
     const prevStepIndex = currentStepIndex - 1;
-    this.currentState.currentStep = this.currentState.currentTutorial.steps[prevStepIndex] || null;
+    this.currentState.currentStep = this.currentState.currentTutorial.steps[prevStepIndex] ?? null;
     this.currentState.stepProgress = prevStepIndex;
     this.currentState.lastInteraction = new Date().toISOString();
 
@@ -213,7 +203,7 @@ export class TutorialSystemManager {
   }
 
   // Tutorial Validation
-  validateStep(step: TutorialStep, context: any): { isValid: boolean; errors: string[] } {
+  validateStep(step: TutorialStep, context: Record<string, unknown>): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     for (const action of step.actions) {
@@ -229,7 +219,7 @@ export class TutorialSystemManager {
     };
   }
 
-  private validateAction(validation: TutorialValidation, context: any): { isValid: boolean; errors: string[] } {
+  private validateAction(validation: TutorialValidation, context: Record<string, unknown>): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     try {
@@ -301,13 +291,13 @@ export class TutorialSystemManager {
     );
   }
 
-  private getCustomValidator(validatorName: string): ((context: any) => boolean) | null {
+  private getCustomValidator(validatorName: string): ((context: Record<string, unknown>) => boolean) | null {
     // Custom validators can be registered here
-    const validators: Record<string, (context: any) => boolean> = {
-      'game-state-valid': (context) => context.gameState && context.gameState.isValid === true,
-      'player-ready': (context) => context.player && context.player.isReady === true,
-      'room-joined': (context) => context.room && context.room.isJoined === true,
-      'mission-selected': (context) => context.mission && context.mission.isSelected === true
+    const validators: Record<string, (context: Record<string, unknown>) => boolean> = {
+      'game-state-valid': (context) => Boolean(context.gameState && (context.gameState as any).isValid === true),
+      'player-ready': (context) => Boolean(context.player && (context.player as any).isReady === true),
+      'room-joined': (context) => Boolean(context.room && (context.room as any).isJoined === true),
+      'mission-selected': (context) => Boolean(context.mission && (context.mission as any).isSelected === true)
     };
 
     return validators[validatorName] || null;
@@ -457,7 +447,7 @@ export class TutorialSystemManager {
     return participants;
   }
 
-  private initializePracticeProgress(scenario: PracticeScenario): PracticeProgress {
+  private initializePracticeProgress(_scenario: PracticeScenario): PracticeProgress {
     return {
       currentPhase: 'setup',
       phasesCompleted: [],
@@ -486,7 +476,7 @@ export class TutorialSystemManager {
     };
   }
 
-  private initializePerformance(): any {
+  private initializePerformance(): PracticePerformance {
     return {
       score: 0,
       accuracy: 0,
@@ -501,7 +491,7 @@ export class TutorialSystemManager {
   }
 
   // Contextual Help System
-  getContextualHelp(trigger: ContextualHelpTrigger, context: any): ContextualHelp[] {
+  getContextualHelp(trigger: ContextualHelpTrigger, context: Record<string, unknown>): ContextualHelp[] {
     const relevantHelp = Array.from(this.contextualHelp.values()).filter(help => {
       if (help.dismissed) return false;
       if (!this.evaluateHelpConditions(help, context)) return false;

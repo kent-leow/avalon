@@ -14,45 +14,31 @@ import {
   calculateVotingProgress, 
   calculateRejectionTracker, 
   calculateVotingResults,
-  validateVotingSession,
-  areAllPlayersVoted,
-  canPlayerChangeVote 
+  areAllPlayersVoted
 } from "~/lib/voting-utils";
 import { 
   calculateScoreTracker, 
   createGamePhase, 
   createPlayerActivity, 
-  createGameTimer, 
-  filterVoteHistory, 
-  calculateGameMetrics,
-  getNextLeader,
-  validateMissionRequirements,
-  canPlayerAct
+  createGameTimer
 } from "~/lib/game-progress-utils";
 import {
   createHostManagement,
   createHostAction,
-  validateHostAction,
   createActivityLog,
-  processHostTransfer,
-  shouldTriggerAutoCleanup,
-  createHostNotification
+  processHostTransfer
 } from "~/lib/host-management-utils";
 import {
   notifyPlayerJoined,
   notifyPlayerLeft,
   notifyPlayerReadyChanged,
-  notifyGamePhaseChanged,
-  notifyVoteCast,
   notifySettingsChanged,
-  notifyGameStarted,
-  syncRoomState
+  notifyGameStarted
 } from "~/server/sse-events";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
-import type { RoleKnowledge } from "~/types/role-knowledge";
 import type { MissionPlayer } from "~/types/mission";
-import type { VotingSession, VoteChoice, Vote } from "~/types/voting";
+import type { Vote } from "~/types/voting";
 import type { GameProgress, PlayerStatus, VoteHistoryEntry } from "~/types/game-progress";
 import type { 
   HostManagement, 

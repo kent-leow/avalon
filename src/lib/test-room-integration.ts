@@ -2,7 +2,6 @@
  * Test utilities for Room API integration
  */
 
-import { api } from '~/trpc/react';
 import { validateRoomCode } from '~/lib/room-code-generator';
 
 export async function testRoomCreation() {
@@ -85,9 +84,9 @@ if (typeof window !== 'undefined') {
   // Client-side only tests
   console.log('🧪 Running Room API Integration Tests...');
   
-  testRoomCodeGeneration();
-  testRoomCreation();
-  testRoomJoining();
+  void testRoomCodeGeneration();
+  void testRoomCreation();
+  void testRoomJoining();
   
   console.log('✅ Room API Integration Tests completed');
 }

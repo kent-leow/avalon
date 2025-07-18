@@ -23,7 +23,7 @@ export async function verifyClientSession(roomCode: string): Promise<boolean> {
       return false;
     }
 
-    const data = await response.json();
+    const data = await response.json() as { valid?: boolean };
     console.log('Session verification result:', data);
     
     return data.valid === true;
@@ -41,7 +41,7 @@ export async function syncClientSession(
   playerName: string,
   roomId: string,
   roomCode: string,
-  isHost = false
+  _isHost = false
 ): Promise<void> {
   // Create/update localStorage session
   const session: PlayerSession = {
@@ -67,7 +67,7 @@ export async function syncClientSession(
 /**
  * Check if client session matches expected room
  */
-export function validateClientSession(expectedRoomCode: string): boolean {
+export function validateClientSession(_expectedRoomCode: string): boolean {
   const session = getSession();
   
   if (!session) {

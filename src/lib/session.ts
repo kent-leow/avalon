@@ -3,7 +3,6 @@
  */
 
 const SESSION_STORAGE_KEY = 'avalon_player_session';
-const COOKIE_NAME = 'avalon_session';
 
 export interface PlayerSession {
   id: string;
@@ -31,7 +30,7 @@ export function getSession(): PlayerSession | null {
     const sessionData = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!sessionData) return null;
     
-    const session: PlayerSession = JSON.parse(sessionData);
+    const session = JSON.parse(sessionData) as PlayerSession;
     
     // Check if session has expired
     if (new Date() > new Date(session.expiresAt)) {
