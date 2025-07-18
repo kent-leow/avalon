@@ -11,10 +11,18 @@ const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
 const port = parseInt(process.env.PORT || '3000', 10);
 
-const app = next({ dev, hostname, port });
+// Configure Next.js with development optimizations
+const app = next({ 
+  dev, 
+  hostname, 
+  port,
+  turbo: dev, // Enable turbo mode in development
+});
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
+  console.log('[Server] Next.js application prepared');
+  
   const server = createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url || '', true);
@@ -32,5 +40,6 @@ app.prepare().then(() => {
 
   server.listen(port, () => {
     console.log(`> Ready on http://${hostname}:${port}`);
+    console.log(`> Next.js ${dev ? 'development' : 'production'} server with Socket.IO`);
   });
 });
