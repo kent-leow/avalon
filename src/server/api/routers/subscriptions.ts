@@ -59,35 +59,40 @@ export const subscriptionsRouter = createTRPCRouter({
               },
             });
 
-            if (room) {
-              // Send initial room state sync
-              emit.next({
-                id: `room-sync-${Date.now()}`,
-                type: 'room_state_sync',
-                payload: {
-                  room: {
-                    id: room.id,
-                    roomCode: room.code,
-                    phase: room.phase,
-                    players: room.players.map(p => ({
-                      id: p.id,
-                      name: p.name,
-                      isHost: p.isHost,
-                      isReady: p.isReady,
-                      isOnline: true, // Assume online for now
-                    })),
-                    settings: room.settings,
-                    gameState: room.gameState,
-                  },
-                },
-                timestamp: new Date(),
-                playerId,
-                roomCode,
-                version: 1,
-              });
+            if (!room) {
+              console.error(`[Subscription] Room ${roomCode} not found`);
+              emit.error(new Error(`Room ${roomCode} not found`));
+              return;
             }
+
+            // Send initial room state sync
+            emit.next({
+              id: `room-sync-${Date.now()}`,
+              type: 'room_state_sync',
+              payload: {
+                room: {
+                  id: room.id,
+                  roomCode: room.code,
+                  phase: room.phase,
+                  players: room.players.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    isHost: p.isHost,
+                    isReady: p.isReady,
+                    isOnline: true, // Assume online for now
+                  })),
+                  settings: room.settings,
+                  gameState: room.gameState,
+                },
+              },
+              timestamp: new Date(),
+              playerId,
+              roomCode,
+              version: 1,
+            });
           } catch (error) {
             console.error(`[Subscription] Failed to fetch initial room state for ${roomCode}:`, error);
+            emit.error(error);
           }
         })();
 

@@ -19,6 +19,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   const router = useRouter();
   const [session, setSession] = useState<PlayerSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [timeoutReached, setTimeoutReached] = useState(false);
 
   // Use real-time room hook instead of polling
   const {
@@ -30,7 +31,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     roomCode,
     playerId: session?.id || '',
     playerName: session?.name || '',
-    enabled: !!session && sessionChecked,
+    enabled: !!session && sessionChecked && !timeoutReached,
   });
 
   useEffect(() => {
@@ -44,15 +45,17 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
           currentSession = await waitForSession(3000);
           
           if (!currentSession) {
-            console.log('No session found after waiting, redirecting to join page');
-            router.push(`/room/${roomCode}`);
+            console.log('No session found after waiting, redirecting to home page');
+            clearSession(); // Clear any stale session data
+            router.push('/');
             return;
           }
         }
         
         // Check if session is for this room
         if (currentSession.roomCode !== roomCode) {
-          console.log('Session room mismatch, redirecting to join page');
+          console.log('Session room mismatch, clearing session and redirecting to join page');
+          clearSession(); // Clear the mismatched session
           router.push(`/room/${roomCode}`);
           return;
         }
@@ -82,6 +85,8 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
           setSession(localSession);
           setSessionChecked(true);
         } else {
+          console.log('No valid session found, clearing session and redirecting to room join page');
+          clearSession(); // Clear any stale session data
           router.push(`/room/${roomCode}`);
         }
       }
@@ -90,13 +95,63 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     checkSession();
   }, [roomCode, router]);
 
+  // Timeout mechanism to prevent infinite loading
+  useEffect(() => {
+    if (sessionChecked) {
+      const timeoutId = setTimeout(() => {
+        if (!roomState.room && roomState.isLoading) {
+          console.log('Room loading timeout reached, likely room does not exist');
+          setTimeoutReached(true);
+          clearSession();
+          router.push('/');
+        }
+      }, 10000); // 10 second timeout
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [sessionChecked, roomState.room, roomState.isLoading, router]);
+
   // Handle real-time connection errors
   useEffect(() => {
     if (sessionChecked && !isConnected && connectionState.status === 'error') {
+      console.log('Real-time connection failed permanently, room likely does not exist');
+      
+      // If we're getting consistent connection errors and no room data, 
+      // the room probably doesn't exist - clear session and redirect
+      if (!roomState.room && roomState.error) {
+        console.log('Room connection failed with no room data, clearing session and redirecting to home');
+        clearSession();
+        router.push('/');
+        return;
+      }
+      
       console.log('Real-time connection failed, falling back to API');
       // Could implement fallback polling here if needed
     }
-  }, [sessionChecked, isConnected, connectionState.status]);
+  }, [sessionChecked, isConnected, connectionState.status, roomState.room, roomState.error, router]);
+
+  // Handle subscription errors more aggressively
+  useEffect(() => {
+    if (sessionChecked && roomState.error) {
+      const errorMessage = roomState.error.toLowerCase();
+      
+      // Check for room not found errors
+      if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
+        console.log('Room not found error detected, clearing session and redirecting to home');
+        clearSession();
+        router.push('/');
+        return;
+      }
+      
+      // Check for other fatal errors
+      if (errorMessage.includes('expired') || errorMessage.includes('invalid')) {
+        console.log('Room session invalid/expired, clearing session and redirecting to home');
+        clearSession();
+        router.push('/');
+        return;
+      }
+    }
+  }, [sessionChecked, roomState.error, router]);
 
   // Extend session on successful real-time updates
   useEffect(() => {
@@ -132,7 +187,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     }
   }, [session, roomState.room, roomCode, router]);
 
-  if (!sessionChecked || roomState.isLoading) {
+  if (!sessionChecked || (roomState.isLoading && !timeoutReached)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">
         <div className="text-center">
@@ -140,6 +195,9 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
           <div className="text-white text-xl">Loading room...</div>
           {connectionState.status === 'reconnecting' && (
             <div className="text-slate-300 text-sm mt-2">Connecting to real-time updates...</div>
+          )}
+          {connectionState.status === 'error' && (
+            <div className="text-red-400 text-sm mt-2">Connection failed. Retrying...</div>
           )}
         </div>
       </div>

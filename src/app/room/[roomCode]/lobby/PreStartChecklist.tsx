@@ -68,8 +68,20 @@ export default function PreStartChecklist({
                   />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 animate-spin" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M4 4.44v2.83c7.03 0 12.73 5.7 12.73 12.73h2.83c0-8.59-6.97-15.56-15.56-15.56z" />
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle 
+                    className="opacity-25" 
+                    cx="12" 
+                    cy="12" 
+                    r="10" 
+                    stroke="currentColor" 
+                    strokeWidth="4"
+                  />
+                  <path 
+                    className="opacity-75" 
+                    fill="currentColor" 
+                    d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
               )}
             </div>
