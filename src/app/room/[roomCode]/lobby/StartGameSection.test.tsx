@@ -41,16 +41,92 @@ jest.mock('~/trpc/react', () => ({
       updatePlayerReady: {
         useMutation: jest.fn(() => ({
           mutate: jest.fn(),
+          mutateAsync: jest.fn(),
           isPending: false
+        }))
+      },
+      submitVote: {
+        useMutation: jest.fn(() => ({
+          mutate: jest.fn(),
+          mutateAsync: jest.fn(),
+          isPending: false
+        }))
+      },
+      submitMissionTeam: {
+        useMutation: jest.fn(() => ({
+          mutate: jest.fn(),
+          mutateAsync: jest.fn(),
+          isPending: false
+        }))
+      },
+      submitMissionVote: {
+        useMutation: jest.fn(() => ({
+          mutate: jest.fn(),
+          mutateAsync: jest.fn(),
+          isPending: false
+        }))
+      }
+    },
+    subscriptions: {
+      subscribeToRoom: {
+        useSubscription: jest.fn(() => ({
+          data: null,
+          error: null
         }))
       }
     }
   }
 }));
 
+// Mock useSSERealtimeRoom hook
+jest.mock('~/hooks/useSSERealtimeRoom', () => ({
+  useSSERealtimeRoom: jest.fn(() => ({
+    roomState: {
+      room: {
+        id: 'test-room',
+        code: 'TEST123',
+        hostId: 'host-id',
+        gameState: {
+          phase: 'lobby',
+          round: 1,
+          leaderIndex: 0,
+          votes: [],
+          missions: [],
+        },
+        players: [
+          { id: '1', name: 'Alice', isHost: true, isReady: false },
+          { id: '2', name: 'Bob', isHost: false, isReady: true }
+        ]
+      },
+      players: [
+        { id: '1', name: 'Alice', isHost: true, isReady: false },
+        { id: '2', name: 'Bob', isHost: false, isReady: true }
+      ],
+      gameState: {
+        phase: 'lobby',
+        round: 1,
+        leaderIndex: 0,
+        votes: [],
+        missions: [],
+      },
+      connected: true,
+      error: null,
+      isLoading: false,
+      lastUpdate: new Date(),
+      subscriptionStatus: 'connected',
+      connectionInfo: {
+        connected: true,
+        reconnectCount: 0,
+        lastReconnectTime: null,
+        connectionId: 'test-connection'
+      }
+    }
+  }))
+}));
+
 // Mock session
 jest.mock('~/lib/session', () => ({
-  getSession: jest.fn(() => ({
+  getSession: jest.fn(() => Promise.resolve({
     id: '1',
     name: 'Alice',
     roomId: 'test-room'
@@ -72,9 +148,9 @@ describe('StartGameSection Integration', () => {
   it('renders with real tRPC integration', async () => {
     render(<StartGameSection roomId="test-room" roomCode="TEST123" />);
 
-    expect(screen.getByRole('heading', { name: 'Start Game' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Game Setup' })).toBeInTheDocument();
     expect(screen.getByText('Complete the requirements below to begin your Avalon adventure')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start Game' })).toBeInTheDocument();
+    expect(screen.getByText('Waiting for host to start the game...')).toBeInTheDocument();
   });
 
   it('displays pre-start checklist', () => {

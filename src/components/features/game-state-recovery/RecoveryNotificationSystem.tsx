@@ -242,7 +242,9 @@ export function ConnectionNotification({
   return (
     <RecoveryNotificationSystem
       notifications={[notification]}
-      onDismiss={onDismiss || (() => {})}
+      onDismiss={onDismiss || (() => {
+        // Default dismiss handler for connection notification
+      })}
       onAction={(_, actionId) => {
         if (actionId === 'retry' && onRetry) {
           onRetry();
@@ -287,7 +289,9 @@ export function SaveNotification({
   return (
     <RecoveryNotificationSystem
       notifications={[notification]}
-      onDismiss={onDismiss || (() => {})}
+      onDismiss={onDismiss || (() => {
+        // Default dismiss handler for save notification
+      })}
       onAction={(_, actionId) => {
         if (actionId === 'retry' && onRetry) {
           onRetry();
@@ -333,7 +337,9 @@ export function RecoveryProgressNotification({
   return (
     <RecoveryNotificationSystem
       notifications={[notification]}
-      onDismiss={onDismiss || (() => {})}
+      onDismiss={onDismiss || (() => {
+        // Default dismiss handler for recovery progress notification
+      })}
       onAction={(_, actionId) => {
         if (actionId === 'cancel' && onCancel) {
           onCancel();

@@ -277,7 +277,7 @@ export class TutorialSystemManager {
           break;
 
         default:
-          errors.push(`Unknown validation type: ${validation.type}`);
+          errors.push(`Unknown validation type: ${validation.type as string}`);
       }
     } catch (error) {
       errors.push(`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -817,7 +817,9 @@ export function getContextualHelp(context: HelpContext): ContextualHelp | null {
           type: 'button',
           action: 'dismiss',
           style: 'primary',
-          handler: () => {},
+          handler: () => {
+            // Tutorial dismiss handler
+          },
           metadata: {}
         }
       ],

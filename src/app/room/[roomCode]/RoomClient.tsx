@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { JoinRoomForm } from './JoinRoomForm';
-import { getSession } from '~/lib/session';
+import { getSession, clearSession } from '~/lib/session';
 import { validateRoomCode } from '~/lib/room-code-generator';
 import { api } from '~/trpc/react';
 import { type Room, type Player } from '~/types/room';
@@ -62,7 +62,6 @@ export function RoomClient({ roomCode }: RoomClientProps) {
     // Handle expired room error
     if (error?.message?.includes('expired')) {
       // Clear session and show join form
-      const { clearSession } = require('~/lib/session');
       clearSession();
       setHasValidSession(false);
       setShouldCheckRoom(false);
@@ -91,7 +90,6 @@ export function RoomClient({ roomCode }: RoomClientProps) {
       
       // Room query failed (likely expired), clear session and show join form
       console.log('Room query failed, clearing session:', error.message);
-      const { clearSession } = require('~/lib/session');
       clearSession();
       setHasValidSession(false);
       setShouldCheckRoom(false);

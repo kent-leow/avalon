@@ -25,7 +25,7 @@ const customJestConfig = {
   ],
   // Add transformIgnorePatterns for ES modules
   transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$|@testing-library))'
+    'node_modules/(?!(.*\\.mjs$|@testing-library|superjson))'
   ],
   // Enable fake timers globally
   fakeTimers: {

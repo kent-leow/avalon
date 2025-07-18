@@ -52,8 +52,12 @@ export function GameLayoutContainer({
         currentPhase={gamePhase}
         roomCode={roomCode}
         playerCount={5}
-        onSidebarToggle={() => {}}
-        onSettingsOpen={() => {}}
+        onSidebarToggle={() => {
+          // Toggle sidebar handler
+        }}
+        onSettingsOpen={() => {
+          // Open settings handler
+        }}
       />
       
       <div className="flex flex-1 overflow-hidden">
