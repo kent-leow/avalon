@@ -31,7 +31,7 @@ nextApp.prepare().then(() => {
   // Initialize Socket.IO only on server side
   if (typeof window === 'undefined') {
     // Dynamic import to avoid client-side execution
-    import('./src/server/socket.js').then(({ initializeSocket }) => {
+    import('./src/server/socket.ts').then(({ initializeSocket }) => {
       initializeSocket(server);
       console.log('[Server] Socket.IO initialized');
     }).catch((err) => {

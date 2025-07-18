@@ -50,31 +50,7 @@ export function useRealtimeRoom(options: UseRealtimeRoomOptions) {
   const [votingState, setVotingState] = useState<any>(null);
   const [gameProgress, setGameProgress] = useState<any>(null);
 
-  const {
-    connectionState,
-    isConnected,
-    sendEvent,
-    connect,
-    disconnect,
-  } = useRealTimeSync({
-    roomCode,
-    playerId,
-    playerName,
-    autoConnect: enabled,
-    onEvent: handleRealtimeEvent,
-    onConnectionChange: (state) => {
-      console.log('[RealTime] Connection state changed:', state.status);
-    },
-    onError: (error) => {
-      setRoomState(prev => ({
-        ...prev,
-        error: error.message,
-        isLoading: false,
-      }));
-    },
-  });
-
-  function handleRealtimeEvent(event: RealTimeEvent) {
+  const handleRealtimeEvent = useCallback((event: RealTimeEvent) => {
     console.log('[RealTime] Received event:', event.type);
 
     switch (event.type) {
@@ -212,7 +188,31 @@ export function useRealtimeRoom(options: UseRealtimeRoomOptions) {
       default:
         console.log('[RealTime] Unhandled event type:', event.type);
     }
-  }
+  }, []);
+
+  const {
+    connectionState,
+    isConnected,
+    sendEvent,
+    connect,
+    disconnect,
+  } = useRealTimeSync({
+    roomCode,
+    playerId,
+    playerName,
+    autoConnect: enabled,
+    onEvent: handleRealtimeEvent,
+    onConnectionChange: (state) => {
+      console.log('[RealTime] Connection state changed:', state.status);
+    },
+    onError: (error) => {
+      setRoomState(prev => ({
+        ...prev,
+        error: error.message,
+        isLoading: false,
+      }));
+    },
+  });
 
   // Actions
   const updatePlayerReady = useCallback((isReady: boolean) => {

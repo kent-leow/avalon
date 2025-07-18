@@ -55,9 +55,9 @@ export function useRealTimeSync(options: UseRealTimeSyncOptions): UseRealTimeSyn
     roomCode,
     playerId,
     playerName,
-    socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000',
     autoConnect = true,
-    enableOptimisticUpdates = true,
+    enableOptimisticUpdates = true, 
     enablePerformanceMonitoring = true,
     onEvent,
     onConnectionChange,
@@ -96,6 +96,8 @@ export function useRealTimeSync(options: UseRealTimeSyncOptions): UseRealTimeSyn
 
   // Socket event handlers
   const handleConnect = useCallback(() => {
+    console.log('[RealTime] Connection established');
+    
     updateConnectionState({
       status: 'connected',
       retryCount: 0,
@@ -103,6 +105,8 @@ export function useRealTimeSync(options: UseRealTimeSyncOptions): UseRealTimeSyn
       lastSeen: new Date(),
     });
 
+    console.log(`[RealTime] Joining room ${roomCode} as ${playerName} (${playerId})`);
+    
     // Join room
     socketRef.current?.emit('join_room', {
       roomCode,
@@ -113,6 +117,7 @@ export function useRealTimeSync(options: UseRealTimeSyncOptions): UseRealTimeSyn
 
     // Process queued actions
     if (queuedActions.length > 0) {
+      console.log(`[RealTime] Processing ${queuedActions.length} queued actions`);
       processActionQueue(queuedActions, async (action) => {
         socketRef.current?.emit('action', action);
       });
@@ -120,27 +125,45 @@ export function useRealTimeSync(options: UseRealTimeSyncOptions): UseRealTimeSyn
   }, [roomCode, playerId, playerName, queuedActions, updateConnectionState]);
 
   const handleDisconnect = useCallback(() => {
+    console.log('[RealTime] Connection disconnected');
+    
     updateConnectionState({
       status: 'disconnected',
       socketId: undefined,
       lastSeen: new Date(),
     });
 
-    // Attempt reconnection
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
+    // Only attempt reconnection if we're still supposed to be connected
+    // and haven't exceeded max retry attempts
+    const maxRetries = 5;
     
-    reconnectTimeoutRef.current = setTimeout(() => {
-      if (socketRef.current) {
-        updateConnectionState({
-          status: 'reconnecting',
-          retryCount: connectionState.retryCount + 1,
-        });
-        socketRef.current.connect();
+    setConnectionState(currentState => {
+      if (currentState.retryCount < maxRetries && autoConnect) {
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        
+        console.log(`[RealTime] Scheduling reconnection attempt ${currentState.retryCount + 1}/${maxRetries}`);
+        
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (socketRef.current && autoConnect) {
+            console.log(`[RealTime] Attempting reconnection ${currentState.retryCount + 1}`);
+            setConnectionState(state => ({
+              ...state,
+              status: 'reconnecting',
+              retryCount: state.retryCount + 1,
+            }));
+            socketRef.current.connect();
+          }
+        }, getRetryDelay(currentState.retryCount));
+      } else {
+        // Max retries exceeded or not enabled, stop trying
+        console.log('[RealTime] Stopping reconnection attempts - max retries exceeded or autoConnect disabled');
       }
-    }, getRetryDelay(connectionState.retryCount));
-  }, [connectionState.retryCount, updateConnectionState]);
+      
+      return currentState;
+    });
+  }, [updateConnectionState, autoConnect]);
 
   const handleError = useCallback((error: any) => {
     updateConnectionState({
@@ -230,7 +253,10 @@ export function useRealTimeSync(options: UseRealTimeSyncOptions): UseRealTimeSyn
 
   // Initialize socket connection
   const connect = useCallback(() => {
+    console.log('[RealTime] Initializing socket connection to:', socketUrl);
+    
     if (socketRef.current) {
+      console.log('[RealTime] Disconnecting existing socket');
       socketRef.current.disconnect();
     }
 
@@ -238,6 +264,7 @@ export function useRealTimeSync(options: UseRealTimeSyncOptions): UseRealTimeSyn
       transports: ['websocket'],
       reconnection: false, // We handle reconnection manually
       timeout: REAL_TIME_CONSTANTS.SYNC_TIMEOUT_MS,
+      autoConnect: true,
     });
 
     // Register event handlers
@@ -246,6 +273,11 @@ export function useRealTimeSync(options: UseRealTimeSyncOptions): UseRealTimeSyn
     socket.on('error', handleError);
     socket.on('realtime_event', handleRealtimeEvent);
     socket.on('pong', handlePong);
+
+    socket.on('connect_error', (error) => {
+      console.error('[RealTime] Connection error:', error);
+      handleError(error);
+    });
 
     socketRef.current = socket;
     updateConnectionState({ socketId: socket.id });
