@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { waitForSession, verifyClientSession } from '~/lib/session-sync';
 import { getSession, clearSession, extendSession } from '~/lib/session';
 import { useSSERealtimeRoom } from '~/hooks/useSSERealtimeRoom';
+import { api } from '~/trpc/react';
 import StartGameSection from './StartGameSection';
 import LobbySharing from './LobbySharing';
 import PlayerManagementSection from './PlayerManagementSection';
@@ -20,6 +21,9 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   const [session, setSession] = useState<PlayerSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
+
+  // tRPC mutation for leaving room
+  const leaveRoomMutation = api.room.leaveRoom.useMutation();
 
   // Use real-time room hook instead of polling
   const {
@@ -236,6 +240,36 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   }
 
   const handleLeaveRoom = async () => {
+    try {
+      // Only proceed if we have session and room data
+      if (!session || !roomState.room) {
+        console.log('No session or room data, just clearing session and redirecting');
+        clearSession();
+        router.push('/');
+        return;
+      }
+
+      // Find the current player in the room to get their database ID
+      const currentPlayer = roomState.room.players.find((p: any) => p.name === session.name);
+      if (!currentPlayer) {
+        console.log('Current player not found in room, just clearing session and redirecting');
+        clearSession();
+        router.push('/');
+        return;
+      }
+
+      // Call the leaveRoom mutation to remove player from database
+      await leaveRoomMutation.mutateAsync({
+        roomId: roomState.room.id,
+        playerId: currentPlayer.id, // Use the database player ID, not session ID
+      });
+
+      console.log('Successfully left room, player removed from database');
+    } catch (error) {
+      console.error('Error leaving room:', error);
+      // Continue with cleanup even if the API call fails
+    }
+    
     try {
       // Clear server session
       await fetch('/api/clear-session', {

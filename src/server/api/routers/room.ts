@@ -987,6 +987,86 @@ export const roomRouter = createTRPCRouter({
     }),
 
   /**
+   * Remove the current player from the room
+   */
+  leaveRoom: publicProcedure
+    .input(z.object({
+      roomId: z.string().cuid("Invalid room ID"),
+      playerId: z.string().cuid("Invalid player ID"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { roomId, playerId } = input;
+      
+      // Find the room and player
+      const room = await ctx.db.room.findUnique({
+        where: { id: roomId },
+        include: { players: true },
+      });
+      
+      if (!room) {
+        throw new Error("Room not found");
+      }
+      
+      // Validate room expiration and extend on activity
+      try {
+        await validateRoomExpiration(ctx.db, room.id);
+        await extendRoomOnActivity(ctx.db, room.id);
+      } catch (error) {
+        throw new Error("Room has expired");
+      }
+      
+      const player = room.players.find(p => p.id === playerId);
+      if (!player) {
+        throw new Error("Player not found in room");
+      }
+      
+      // Check if player is the last remaining player
+      if (room.players.length === 1) {
+        // If this is the last player, delete the entire room
+        await ctx.db.room.delete({
+          where: { id: roomId },
+        });
+        
+        // Note: Player will be cascade deleted with the room
+        return { success: true, roomDeleted: true };
+      }
+      
+      // If player is host and there are other players, transfer host to someone else
+      if (player.isHost && room.players.length > 1) {
+        const nextHost = room.players.find(p => p.id !== playerId);
+        if (nextHost) {
+          // Transfer host to the next player
+          await ctx.db.player.update({
+            where: { id: nextHost.id },
+            data: { isHost: true },
+          });
+          
+          // Remove host from leaving player
+          await ctx.db.player.update({
+            where: { id: playerId },
+            data: { isHost: false },
+          });
+        }
+      }
+      
+      // Remove player from room
+      await ctx.db.player.delete({
+        where: { id: playerId },
+      });
+      
+      // Emit real-time event for player leaving
+      await notifyPlayerLeft(
+        room.id,
+        room.code,
+        playerId,
+        player.name,
+        ctx.db
+      );
+      
+      return { success: true, roomDeleted: false };
+    }),
+
+  /**
    * Transfer host privileges to another player
    */
   transferHost: publicProcedure
