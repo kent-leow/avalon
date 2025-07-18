@@ -91,7 +91,7 @@ export function createRealTimeEvent(
   payload: any,
   playerId: string,
   roomCode: string,
-  version: number = 1
+  version = 1
 ): RealTimeEvent {
   return {
     id: generateEventId(),
@@ -326,7 +326,7 @@ export function getPlayerActivityAnimation(activity: PlayerActivity['activity'])
 export function createRoomSyncState(
   roomCode: string,
   connectedPlayers: string[],
-  version: number = 1
+  version = 1
 ): RoomSyncState {
   return {
     roomCode,

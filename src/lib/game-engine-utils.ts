@@ -19,7 +19,7 @@ export function createGameEngineError(
   code: string,
   message: string,
   phase: GamePhase,
-  recoverable: boolean = true
+  recoverable = true
 ): GameEngineError {
   return {
     code,
@@ -251,7 +251,7 @@ export function createMockGameState(): GameState {
 /**
  * Creates mock players for testing
  */
-export function createMockPlayers(count: number = 5): Player[] {
+export function createMockPlayers(count = 5): Player[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `player-${i + 1}`,
     name: `Player ${i + 1}`,

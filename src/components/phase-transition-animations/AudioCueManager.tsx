@@ -17,12 +17,19 @@ export function AudioCueManager({
   // Initialize AudioContext for better control
   useEffect(() => {
     if (enabled && typeof window !== 'undefined') {
-      const context = new (window.AudioContext || (window as any).webkitAudioContext)();
-      setAudioContext(context);
-      
-      return () => {
-        context.close();
-      };
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          const context = new AudioContextClass();
+          setAudioContext(context);
+          
+          return () => {
+            context.close();
+          };
+        }
+      } catch (error) {
+        console.warn('AudioContext not available:', error);
+      }
     }
   }, [enabled]);
 

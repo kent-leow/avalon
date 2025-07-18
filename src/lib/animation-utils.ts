@@ -32,8 +32,8 @@ export function createAnimationConfig(
 export function createQueuedAnimation(
   type: TransitionType,
   config: AnimationConfig,
-  priority: number = 3,
-  delay: number = 0
+  priority = 3,
+  delay = 0
 ): QueuedAnimation {
   return {
     id: `animation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -133,7 +133,7 @@ export function getPhaseTransitionConfig(
 // Action Feedback Utilities
 export function getActionFeedbackConfig(
   actionType: ActionType,
-  success: boolean = true
+  success = true
 ): AnimationConfig {
   const effects: EffectType[] = [];
   
@@ -173,9 +173,9 @@ export function getCelebrationConfig(
 // Effect Configuration Utilities
 export function createEffectConfig(
   type: EffectType,
-  duration: number = 300,
-  delay: number = 0,
-  intensity: number = 1,
+  duration = 300,
+  delay = 0,
+  intensity = 1,
   color?: string
 ): EffectConfig {
   return {
@@ -188,7 +188,7 @@ export function createEffectConfig(
 }
 
 export function createParticleConfig(
-  count: number = 50,
+  count = 50,
   colors: string[] = ['#22c55e', '#3b82f6', '#f59e0b']
 ): ParticleConfig {
   return {
@@ -233,7 +233,7 @@ export function createAnimationMetrics(): AnimationMetrics {
 export function updateAnimationMetrics(
   metrics: AnimationMetrics,
   duration: number,
-  frameDrops: number = 0
+  frameDrops = 0
 ): AnimationMetrics {
   const newTotal = metrics.totalAnimations + 1;
   const newAverage = (metrics.averageDuration * metrics.totalAnimations + duration) / newTotal;
@@ -285,7 +285,7 @@ export function createMockAnimationQueue(): QueuedAnimation[] {
   ];
 }
 
-export function createMockMotionPreferences(reducedMotion: boolean = false): MotionPreferences {
+export function createMockMotionPreferences(reducedMotion = false): MotionPreferences {
   return {
     reducedMotion,
     disableAnimations: false,
@@ -314,7 +314,7 @@ export function cleanupAllAnimations(): void {
 }
 
 // Duration Calculation Utilities
-export function calculateStaggeredDelay(index: number, baseDelay: number = 50): number {
+export function calculateStaggeredDelay(index: number, baseDelay = 50): number {
   return index * baseDelay;
 }
 

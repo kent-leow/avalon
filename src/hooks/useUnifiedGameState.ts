@@ -169,7 +169,7 @@ export function useUnifiedGameState(
       // Rollback optimistic update if it failed
       if (enableOptimisticUpdates) {
         const optimisticUpdate = pendingUpdates.find(u => u.playerId === playerId);
-        if (optimisticUpdate && optimisticUpdate.rollbackState) {
+        if (optimisticUpdate?.rollbackState) {
           dispatch({ type: 'SET_STATE', payload: optimisticUpdate.rollbackState });
           dispatch({ type: 'REMOVE_OPTIMISTIC_UPDATE', payload: optimisticUpdate.id });
         }
@@ -190,7 +190,7 @@ export function useUnifiedGameState(
   // Rollback optimistic update
   const rollbackUpdate = useCallback(async (updateId: string): Promise<void> => {
     const update = pendingUpdates.find(u => u.id === updateId);
-    if (!update || !update.rollbackState) {
+    if (!update?.rollbackState) {
       return;
     }
 

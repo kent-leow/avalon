@@ -41,7 +41,7 @@ export async function syncClientSession(
   playerName: string,
   roomId: string,
   roomCode: string,
-  isHost: boolean = false
+  isHost = false
 ): Promise<void> {
   // Create/update localStorage session
   const session: PlayerSession = {
@@ -84,8 +84,8 @@ export function validateClientSession(expectedRoomCode: string): boolean {
  * Wait for session to be available with timeout
  */
 export async function waitForSession(
-  timeout: number = 3000,
-  pollInterval: number = 100
+  timeout = 3000,
+  pollInterval = 100
 ): Promise<PlayerSession | null> {
   const startTime = Date.now();
   

@@ -24,7 +24,7 @@ export default function PlayerManagementSection({
   players,
   isHost,
 }: PlayerManagementSectionProps) {
-  const [playerActions, setPlayerActions] = useState<{[key: string]: boolean}>({});
+  const [playerActions, setPlayerActions] = useState<Record<string, boolean>>({});
   const session = getSession();
   const currentPlayerId = session && players.find(p => p.name === session.name)?.id;
 

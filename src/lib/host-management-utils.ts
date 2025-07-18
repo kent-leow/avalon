@@ -455,7 +455,7 @@ export function createHostNotification(
   title: string,
   message: string,
   priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium',
-  actionRequired: boolean = false
+  actionRequired = false
 ): HostNotification {
   return {
     id: generateActionId(),

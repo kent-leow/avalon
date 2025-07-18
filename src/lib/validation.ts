@@ -234,7 +234,7 @@ export class ValidationError extends Error {
 }
 
 // Security validation helpers
-export function validateTimestamp(timestamp: number, toleranceMs: number = 60000): boolean {
+export function validateTimestamp(timestamp: number, toleranceMs = 60000): boolean {
   const now = Date.now();
   return timestamp >= (now - toleranceMs) && timestamp <= (now + toleranceMs);
 }

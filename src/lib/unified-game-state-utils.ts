@@ -127,7 +127,7 @@ export function resolveConflict(
   
   // Handle cases where one state is undefined
   if (!state1) return state2!;
-  if (!state2) return state1!;
+  if (!state2) return state1;
   
   switch (strategy) {
     case 'last_writer_wins':
@@ -187,7 +187,7 @@ export function createOptimisticUpdate(
   type: UpdateType,
   payload: any,
   playerId: string,
-  description: string = `${type} update`,
+  description = `${type} update`,
   options: {
     maxRetries?: number;
     timeoutMs?: number;
@@ -326,7 +326,7 @@ export function createGameStateError(
   code: string,
   message: string,
   context?: any,
-  recoverable: boolean = true
+  recoverable = true
 ): GameStateError {
   return {
     code,

@@ -127,7 +127,7 @@ export default function MissionExecutionDemo() {
             { playerId: currentScenario.currentPlayerId, vote, timestamp: new Date() },
             ...remainingPlayers.map(id => ({
               playerId: id,
-              vote: (Math.random() > 0.7 ? 'failure' : 'success') as 'success' | 'failure',
+              vote: (Math.random() > 0.7 ? 'failure' : 'success') as "success" | "failure",
               timestamp: new Date()
             }))
           ],

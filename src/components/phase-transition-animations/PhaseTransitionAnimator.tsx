@@ -175,7 +175,7 @@ export function PhaseTransitionAnimator({
             data-testid="transition-loading-overlay"
           >
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 border-2 border-#3b82f6 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-white font-medium">
                 {transitionType === 'phase' ? 'Transitioning...' : 
                  transitionType === 'celebration' ? 'Celebrating...' : 

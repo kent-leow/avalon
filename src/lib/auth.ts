@@ -17,7 +17,7 @@ export async function createSession(
   userId: string,
   roomCode: string,
   playerName: string,
-  isHost: boolean = false
+  isHost = false
 ): Promise<void> {
   console.log('Creating JWT session:', { userId, roomCode, playerName, isHost });
   

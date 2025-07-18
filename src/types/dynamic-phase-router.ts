@@ -8,7 +8,7 @@
 import type { GamePhase, GameState } from './game-state';
 import type { Player } from './room';
 import type { ReactNode, ComponentType } from 'react';
-import React from 'react';
+import type React from 'react';
 
 /**
  * Phase router state interface
@@ -38,9 +38,7 @@ export interface PhaseRouterError {
 /**
  * Phase component mapping interface
  */
-export interface PhaseComponentMap {
-  [key: string]: () => Promise<ComponentType<any>>;
-}
+export type PhaseComponentMap = Record<string, () => Promise<ComponentType<any>>>;
 
 /**
  * Phase transition options interface

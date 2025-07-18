@@ -48,7 +48,7 @@ export function isIOS(): boolean {
 export function isAndroid(): boolean {
   if (typeof window === 'undefined') return false;
   
-  return /Android/.test(navigator.userAgent);
+  return navigator.userAgent.includes('Android');
 }
 
 export function hasNotch(): boolean {
@@ -144,7 +144,7 @@ export function triggerHapticFeedback(type: TouchFeedbackType): void {
 export function createTouchTarget(
   element: HTMLElement,
   minSize: number = TOUCH_TARGET_SIZES.minimum,
-  expandedHitArea: number = 8
+  expandedHitArea = 8
 ): void {
   const rect = element.getBoundingClientRect();
   const actualSize = Math.min(rect.width, rect.height);

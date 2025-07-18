@@ -197,7 +197,7 @@ export const TutorialMainPage: React.FC<TutorialMainPageProps> = ({
   // Render tutorial view
   if (currentView === 'tutorial' && selectedTutorial) {
     const tutorial = mockTutorials.find((t: any) => t.id === selectedTutorial);
-    if (!tutorial || !tutorial.steps || !tutorial.steps[0]) return null;
+    if (!tutorial?.steps?.[0]) return null;
 
     return (
       <div className="tutorial-view min-h-screen bg-gray-50">

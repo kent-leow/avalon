@@ -1,12 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { PhaseTransitionAnimator } from '../../src/components/phase-transition-animations/PhaseTransitionAnimator';
-import { usePhaseTransitionAnimations } from '../../src/hooks/usePhaseTransitionAnimations';
-import { useMotionPreferences } from '../../src/hooks/useMotionPreferences';
+import { PhaseTransitionAnimator } from '../PhaseTransitionAnimator';
+import { usePhaseTransitionAnimations } from '~/hooks/usePhaseTransitionAnimations';
+import { useMotionPreferences } from '~/hooks/useMotionPreferences';
 
 // Mock hooks
-jest.mock('../../src/hooks/usePhaseTransitionAnimations');
-jest.mock('../../src/hooks/useMotionPreferences');
+jest.mock('~/hooks/usePhaseTransitionAnimations');
+jest.mock('~/hooks/useMotionPreferences');
+
+// Mock AudioCueManager to avoid AudioContext issues in tests
+jest.mock('../AudioCueManager', () => ({
+  AudioCueManager: ({ children }: { children?: React.ReactNode }) => (
+    <div data-testid="audio-cue-manager">{children}</div>
+  ),
+}));
 
 const mockUsePhaseTransitionAnimations = usePhaseTransitionAnimations as jest.MockedFunction<typeof usePhaseTransitionAnimations>;
 const mockUseMotionPreferences = useMotionPreferences as jest.MockedFunction<typeof useMotionPreferences>;
@@ -51,7 +58,7 @@ describe('PhaseTransitionAnimator', () => {
   });
 
   it('renders without crashing', () => {
-    render(<PhaseTransitionAnimator currentPhase="LOBBY" previousPhase={null} isTransitioning={false} transitionType="phase">
+    render(<PhaseTransitionAnimator currentPhase="lobby" previousPhase={null} isTransitioning={false} transitionType="phase">
       <div>Test Content</div>
     </PhaseTransitionAnimator>);
     expect(screen.getByTestId('phase-transition-animator')).toBeInTheDocument();
@@ -72,7 +79,7 @@ describe('PhaseTransitionAnimator', () => {
       shouldAnimate: jest.fn(() => false),
     });
 
-    render(<PhaseTransitionAnimator currentPhase="LOBBY" previousPhase={null} isTransitioning={false} transitionType="phase">
+    render(<PhaseTransitionAnimator currentPhase="lobby" previousPhase={null} isTransitioning={false} transitionType="phase">
       <div>Test Content</div>
     </PhaseTransitionAnimator>);
     const animator = screen.getByTestId('phase-transition-animator');
@@ -80,7 +87,7 @@ describe('PhaseTransitionAnimator', () => {
   });
 
   it('renders with transitioning state', () => {
-    render(<PhaseTransitionAnimator currentPhase="MISSION_SELECTION" previousPhase="LOBBY" isTransitioning={true} transitionType="phase">
+    render(<PhaseTransitionAnimator currentPhase="missionSelect" previousPhase="lobby" isTransitioning={true} transitionType="phase">
       <div>Test Content</div>
     </PhaseTransitionAnimator>);
     const animator = screen.getByTestId('phase-transition-animator');

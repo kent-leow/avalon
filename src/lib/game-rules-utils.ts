@@ -565,7 +565,7 @@ export function validateCharacterDependencies(selectedCharacters: CharacterType[
  */
 export function formatRuleContent(content: string): string {
   // Convert markdown-style formatting to HTML
-  let formatted = content
+  const formatted = content
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`(.*?)`/g, '<code>$1</code>')

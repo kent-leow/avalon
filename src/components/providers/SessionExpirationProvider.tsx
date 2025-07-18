@@ -17,7 +17,7 @@ export function SessionExpirationProvider({ children }: { children: React.ReactN
       try {
         const session = getSession();
         
-        if (!session || !session.roomCode) {
+        if (!session?.roomCode) {
           isCheckingRef.current = false;
           return;
         }

@@ -21,9 +21,7 @@ export interface Character {
   canKill?: readonly string[];
 }
 
-export interface CharacterCount {
-  [characterId: string]: number;
-}
+export type CharacterCount = Record<string, number>;
 
 export interface ValidationError {
   type: 'dependency' | 'conflict' | 'balance' | 'playerCount';

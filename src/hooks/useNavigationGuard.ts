@@ -16,9 +16,9 @@ import type { GameState } from '~/types/game-state';
  * and recovery mechanisms for active game sessions.
  */
 export function useNavigationGuard(
-  isGameActive: boolean = false,
-  autoBackup: boolean = true,
-  backupInterval: number = 30000
+  isGameActive = false,
+  autoBackup = true,
+  backupInterval = 30000
 ): UseNavigationGuardReturn {
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
   const backupTimeoutRef = useRef<NodeJS.Timeout | null>(null);

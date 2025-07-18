@@ -55,9 +55,9 @@ import {
 
 // Tutorial System Management
 export class TutorialSystemManager {
-  private tutorials: Map<string, Tutorial> = new Map();
-  private practiceScenarios: Map<string, PracticeScenario> = new Map();
-  private contextualHelp: Map<string, ContextualHelp> = new Map();
+  private tutorials = new Map<string, Tutorial>();
+  private practiceScenarios = new Map<string, PracticeScenario>();
+  private contextualHelp = new Map<string, ContextualHelp>();
   private currentState: TutorialState | null = null;
 
   constructor() {
@@ -260,8 +260,8 @@ export class TutorialSystemManager {
 
         case 'element-value':
           if (validation.selector && validation.expectedValue) {
-            const element = document.querySelector(validation.selector) as HTMLInputElement;
-            if (!element || element.value !== validation.expectedValue) {
+            const element = document.querySelector(validation.selector)!;
+            if (!element || (element as HTMLInputElement).value !== validation.expectedValue) {
               errors.push(`Element value mismatch: ${validation.selector}`);
             }
           }

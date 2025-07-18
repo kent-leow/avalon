@@ -26,7 +26,7 @@ export function createPhaseRouterError(
   code: PhaseRouterError['code'],
   message: string,
   phase: GamePhase,
-  recoverable: boolean = true,
+  recoverable = true,
   metadata?: Record<string, any>
 ): PhaseRouterError {
   return {

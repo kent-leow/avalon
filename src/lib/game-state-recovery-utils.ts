@@ -480,7 +480,7 @@ export function estimateSnapshotSize(snapshot: GameStateSnapshot): number {
 /**
  * Create persistence adapter for localStorage
  */
-export function createLocalStorageAdapter(prefix: string = 'avalon_recovery_'): PersistenceAdapter {
+export function createLocalStorageAdapter(prefix = 'avalon_recovery_'): PersistenceAdapter {
   return {
     async save(key: string, data: any): Promise<void> {
       const fullKey = `${prefix}${key}`;
@@ -522,7 +522,7 @@ export function createLocalStorageAdapter(prefix: string = 'avalon_recovery_'): 
 /**
  * Create persistence adapter for sessionStorage
  */
-export function createSessionStorageAdapter(prefix: string = 'avalon_session_'): PersistenceAdapter {
+export function createSessionStorageAdapter(prefix = 'avalon_session_'): PersistenceAdapter {
   return {
     async save(key: string, data: any): Promise<void> {
       const fullKey = `${prefix}${key}`;
