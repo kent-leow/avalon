@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { verifySession } from './lib/auth';
 import { rateLimitByIP, RATE_LIMIT_CONFIGS, RateLimitError } from './lib/rate-limit';
 
@@ -34,7 +34,8 @@ export async function middleware(request: NextRequest) {
       console.log('Middleware protecting room route:', pathname);
       
       // Allow access to room join pages without authentication for non-session users
-      if (pathname.match(/^\/room\/[^\/]+\/?$/)) {
+      const roomJoinRegex = /^\/room\/[^\/]+\/?$/;
+      if (roomJoinRegex.exec(pathname)) {
         console.log('Room join page access');
         return NextResponse.next();
       }
@@ -46,7 +47,8 @@ export async function middleware(request: NextRequest) {
       
       if (!session) {
         console.log('No JWT session found, checking if this is a valid room request');
-        const roomCodeMatch = pathname.match(/^\/room\/([^\/]+)/);
+        const roomCodeRegex = /^\/room\/([^\/]+)/;
+        const roomCodeMatch = roomCodeRegex.exec(pathname);
         if (roomCodeMatch) {
           const roomCode = roomCodeMatch[1];
           
@@ -65,7 +67,8 @@ export async function middleware(request: NextRequest) {
       }
       
       // Extract room code from URL and verify access
-      const roomCodeMatch = pathname.match(/^\/room\/([^\/]+)/);
+      const roomCodeRegex = /^\/room\/([^\/]+)/;
+      const roomCodeMatch = roomCodeRegex.exec(pathname);
       if (roomCodeMatch) {
         const roomCode = roomCodeMatch[1];
         console.log('Checking session room code:', session.roomCode, 'vs URL room code:', roomCode);

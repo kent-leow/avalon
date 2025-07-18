@@ -1,5 +1,159 @@
 @import "tailwindcss";
 
+/* CSS Custom Properties for Phase Transition Animations */
+:root {
+  --transition-duration-fast: 150ms;
+  --transition-duration-normal: 300ms;
+  --transition-duration-slow: 500ms;
+  --transition-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --celebration-duration: 2500ms;
+  --animation-duration-multiplier: 1;
+  --animation-scale: 1;
+  --animation-intensity: 1;
+  --particle-count-multiplier: 1;
+  --particle-opacity: 0.6;
+}
+
+/* Reduced Motion Overrides */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animation-duration-multiplier: 0.5;
+    --animation-scale: 0.8;
+    --particle-count-multiplier: 0.3;
+    --particle-opacity: 0.3;
+  }
+}
+
+/* Motion Preference Classes */
+.disable-animations * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.disable-particles .particle,
+.disable-particles [class*="particle"] {
+  display: none !important;
+}
+
+.disable-shake .animate-shake {
+  animation: none !important;
+}
+
+.reduced-motion {
+  animation-duration: calc(var(--animation-duration-multiplier) * 1s) !important;
+  transition-duration: calc(var(--animation-duration-multiplier) * 1s) !important;
+}
+
+/* Phase Transition Animations */
+@keyframes fade-in-out {
+  0% { opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+@keyframes slide-in-out {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes scale-in-out {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 5px currentColor; opacity: 0.5; }
+  50% { box-shadow: 0 0 20px currentColor; opacity: 1; }
+}
+
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  70% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake-horizontal {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes particles-float {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+}
+
+/* Celebration Animations */
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes star-burst {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+@keyframes winner-glow {
+  0%, 100% { box-shadow: 0 0 10px currentColor; }
+  50% { box-shadow: 0 0 30px currentColor; }
+}
+
+@keyframes celebration-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.1; }
+  50% { transform: scale(1.2); opacity: 0.3; }
+}
+
+/* Action Feedback Animations */
+@keyframes particle-burst {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0) translateY(-30px); opacity: 0; }
+}
+
+/* Slide Across Animation */
+@keyframes slide-across {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Floating Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Firework Animation Generator */
+@keyframes firework-base {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  50% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* Generate firework keyframes for different particles */
+@keyframes firework-0 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(50px, -80px) scale(0); opacity: 0; } }
+@keyframes firework-1 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(80px, -50px) scale(0); opacity: 0; } }
+@keyframes firework-2 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(100px, 0px) scale(0); opacity: 0; } }
+@keyframes firework-3 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(80px, 50px) scale(0); opacity: 0; } }
+@keyframes firework-4 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(50px, 80px) scale(0); opacity: 0; } }
+@keyframes firework-5 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(0px, 100px) scale(0); opacity: 0; } }
+@keyframes firework-6 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(-50px, 80px) scale(0); opacity: 0; } }
+@keyframes firework-7 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(-80px, 50px) scale(0); opacity: 0; } }
+@keyframes firework-8 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(-100px, 0px) scale(0); opacity: 0; } }
+@keyframes firework-9 { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translate(-80px, -50px) scale(0); opacity: 0; } }
+
 /* Custom animations */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
@@ -9,6 +163,43 @@
 
 .animate-shake {
   animation: shake 0.5s ease-in-out;
+}
+
+/* Animation Utility Classes */
+.animate-fade-in-out {
+  animation: fade-in-out var(--transition-duration-normal) var(--transition-easing);
+}
+
+.animate-slide-in-out {
+  animation: slide-in-out var(--transition-duration-normal) var(--transition-easing);
+}
+
+.animate-scale-in-out {
+  animation: scale-in-out var(--transition-duration-normal) var(--transition-easing);
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse var(--transition-duration-slow) var(--transition-easing) infinite;
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale var(--transition-duration-slow) var(--transition-easing) infinite;
+}
+
+.animate-bounce-in {
+  animation: bounce-in var(--transition-duration-normal) var(--transition-easing);
+}
+
+.animate-shake-horizontal {
+  animation: shake-horizontal var(--transition-duration-fast) var(--transition-easing);
+}
+
+.animate-particles-float {
+  animation: particles-float 3s linear infinite;
+}
+
+.animate-float {
+  animation: float 2s ease-in-out infinite;
 }
 
 /* Custom utilities */
