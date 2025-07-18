@@ -64,7 +64,8 @@ export type RealTimeEventType =
   | 'private_message'
   | 'role_reveal'
   | 'mission_result'
-  | 'vote_result';
+  | 'vote_result'
+  | 'host_transfer';
 
 // Action Queue System
 export interface QueuedAction {

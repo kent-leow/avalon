@@ -320,6 +320,26 @@ export function GlobalSSEProvider({ children }: { children: ReactNode }) {
         });
         break;
       
+      case 'host_transfer':
+        dispatch({
+          type: 'UPDATE_ROOM_STATE',
+          payload: {
+            roomCode,
+            state: {
+              room: state.subscriptions.get(roomCode)?.state.room ? {
+                ...state.subscriptions.get(roomCode)!.state.room,
+                hostId: event.payload.newHostId,
+                players: state.subscriptions.get(roomCode)!.state.room.players.map((p: any) => ({
+                  ...p,
+                  isHost: p.id === event.payload.newHostId,
+                })),
+              } : null,
+              lastUpdated: new Date(),
+            },
+          },
+        });
+        break;
+      
       default:
         console.log(`[Global SSE] Unhandled event type: ${event.type}`);
     }
@@ -460,7 +480,7 @@ export function useGlobalSSE(): GlobalSSEContextType {
 }
 
 // Custom hook for subscribing to a specific room
-export function useRoomSSE(roomCode: string, playerId: string, playerName: string, enabled: boolean = true) {
+export function useRoomSSE(roomCode: string, playerId: string, playerName: string, enabled = true) {
   const { subscribeToRoom, unsubscribeFromRoom, getRoomState, getConnectionState } = useGlobalSSE();
   const subscriberId = useRef(`${roomCode}-${playerId}-${Math.random().toString(36).substr(2, 9)}`);
   

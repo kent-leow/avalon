@@ -33,7 +33,8 @@ import {
   notifyPlayerLeft,
   notifyPlayerReadyChanged,
   notifySettingsChanged,
-  notifyGameStarted
+  notifyGameStarted,
+  notifyHostTransfer
 } from "~/server/sse-events";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
@@ -1097,7 +1098,9 @@ export const roomRouter = createTRPCRouter({
       // Find the room and players
       const room = await ctx.db.room.findUnique({
         where: { id: roomId },
-        include: { players: true },
+        include: { 
+          players: true,
+        },
       });
       
       if (!room) {
@@ -1116,6 +1119,9 @@ export const roomRouter = createTRPCRouter({
       if (!newHost) {
         throw new Error("New host player not found in room");
       }
+      
+      // Get current host name
+      const currentHost = room.players.find(p => p.id === room.hostId);
       
       // Update players in transaction
       await ctx.db.$transaction(async (tx) => {
@@ -1137,6 +1143,17 @@ export const roomRouter = createTRPCRouter({
           data: { hostId: newHostId },
         });
       });
+      
+      // Emit host transfer event to all players in the room
+      await notifyHostTransfer(
+        roomId,
+        room.code,
+        room.hostId,
+        newHostId,
+        currentHost?.name || 'Unknown',
+        newHost.name,
+        ctx.db
+      );
       
       return { success: true };
     }),

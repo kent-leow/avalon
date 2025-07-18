@@ -327,3 +327,31 @@ export async function notifySettingsChanged(
   // Sync full room state to ensure consistency
   await syncRoomState(roomId, roomCode, db);
 }
+
+/**
+ * Emit host transfer event
+ */
+export async function notifyHostTransfer(
+  roomId: string,
+  roomCode: string,
+  previousHostId: string,
+  newHostId: string,
+  previousHostName: string,
+  newHostName: string,
+  db: PrismaClient
+): Promise<void> {
+  emitRoomEvent(
+    roomCode,
+    'host_transfer',
+    {
+      previousHostId,
+      newHostId,
+      previousHostName,
+      newHostName,
+      timestamp: new Date(),
+    }
+  );
+
+  // Sync full room state to ensure consistency
+  await syncRoomState(roomId, roomCode, db);
+}
