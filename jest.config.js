@@ -15,13 +15,14 @@ const customJestConfig = {
   // Add test path patterns, exclude Playwright tests
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
-    '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+    '<rootDir>/src/**/*.{test}.{js,jsx,ts,tsx}',
   ],
   // Exclude Playwright test files
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/tests/',  // Exclude Playwright tests directory
+    '.*\\.spec\\.(js|jsx|ts|tsx)$',  // Exclude Playwright spec files
   ],
   // Add transformIgnorePatterns for ES modules
   transformIgnorePatterns: [

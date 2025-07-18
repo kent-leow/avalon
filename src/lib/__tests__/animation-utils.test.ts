@@ -10,7 +10,7 @@ import {
   calculateStaggeredDelay,
   calculateAdaptiveDuration,
   createMockMotionPreferences
-} from '../animation-utils';
+} from '~/lib/animation-utils';
 import { type TransitionType, type EffectType, type CelebrationType, type ActionType } from '~/types/phase-transition-animations';
 
 describe('Animation Utils', () => {
