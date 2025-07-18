@@ -13,7 +13,7 @@ import { api } from '~/trpc/react';
 
 interface UseOptimizedRealtimeRoomOptions {
   roomCode: string;
-  playerId: string;
+  playerId: string; // This is the sessionId for SSE subscription
   playerName: string;
   enabled?: boolean;
 }
@@ -59,11 +59,15 @@ export function useOptimizedRealtimeRoom(options: UseOptimizedRealtimeRoomOption
     progress: roomState.room?.gameState || null,
   };
   
+  // Get the actual database player ID from the room state
+  const currentPlayer = roomState.room?.players.find((p: any) => p.sessionId === playerId);
+  const databasePlayerId = currentPlayer?.id || '';
+  
   // Action handlers
   const updatePlayerReady = useCallback(async (isReady: boolean) => {
     try {
       await updateReadyMutation.mutateAsync({
-        playerId,
+        playerId: databasePlayerId,
         isReady,
       });
       console.log('[Optimized SSE] Player ready status updated:', isReady);
@@ -71,13 +75,13 @@ export function useOptimizedRealtimeRoom(options: UseOptimizedRealtimeRoomOption
       console.error('[Optimized SSE] Failed to update player ready status:', error);
       throw error;
     }
-  }, [playerId, updateReadyMutation]);
+  }, [databasePlayerId, updateReadyMutation]);
   
   const castVote = useCallback(async (choice: 'approve' | 'reject') => {
     try {
       await submitVoteMutation.mutateAsync({
         roomId: roomState.room?.id || '',
-        playerId,
+        playerId: databasePlayerId,
         choice,
       });
       console.log('[Optimized SSE] Vote cast:', choice);
@@ -85,13 +89,13 @@ export function useOptimizedRealtimeRoom(options: UseOptimizedRealtimeRoomOption
       console.error('[Optimized SSE] Failed to cast vote:', error);
       throw error;
     }
-  }, [roomState.room?.id, playerId, submitVoteMutation]);
+  }, [roomState.room?.id, databasePlayerId, submitVoteMutation]);
   
   const selectMissionTeam = useCallback(async (selectedPlayers: string[]) => {
     try {
       await submitMissionTeamMutation.mutateAsync({
         roomId: roomState.room?.id || '',
-        playerId,
+        playerId: databasePlayerId,
         teamIds: selectedPlayers,
       });
       console.log('[Optimized SSE] Mission team selected:', selectedPlayers);
@@ -99,13 +103,13 @@ export function useOptimizedRealtimeRoom(options: UseOptimizedRealtimeRoomOption
       console.error('[Optimized SSE] Failed to select mission team:', error);
       throw error;
     }
-  }, [roomState.room?.id, playerId, submitMissionTeamMutation]);
+  }, [roomState.room?.id, databasePlayerId, submitMissionTeamMutation]);
   
   const castMissionVote = useCallback(async (vote: 'success' | 'failure') => {
     try {
       await submitMissionVoteMutation.mutateAsync({
         roomId: roomState.room?.id || '',
-        playerId,
+        playerId: databasePlayerId,
         vote,
       });
       console.log('[Optimized SSE] Mission vote cast:', vote);
@@ -113,7 +117,7 @@ export function useOptimizedRealtimeRoom(options: UseOptimizedRealtimeRoomOption
       console.error('[Optimized SSE] Failed to cast mission vote:', error);
       throw error;
     }
-  }, [roomState.room?.id, playerId, submitMissionVoteMutation]);
+  }, [roomState.room?.id, databasePlayerId, submitMissionVoteMutation]);
   
   // Generic event sender (for advanced usage)
   const sendRawEvent = useCallback(async (eventType: string, payload: any) => {

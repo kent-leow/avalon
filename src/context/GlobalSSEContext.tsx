@@ -404,33 +404,41 @@ export function GlobalSSEProvider({ children }: { children: ReactNode }) {
       throw new Error(`No subscription found for room ${roomCode}`);
     }
     
+    // Get the actual database player ID from the room state
+    const currentPlayer = subscription.state.room?.players.find((p: any) => p.sessionId === subscription.playerId);
+    const databasePlayerId = currentPlayer?.id || '';
+    
+    if (!databasePlayerId) {
+      throw new Error(`Player not found in room ${roomCode}`);
+    }
+    
     try {
       // Map event types to appropriate mutations
       switch (eventType) {
         case 'player_ready_changed':
           await updateReadyMutation.mutateAsync({
-            playerId: subscription.playerId,
+            playerId: databasePlayerId,
             isReady: payload.isReady,
           });
           break;
         case 'vote_cast':
           await submitVoteMutation.mutateAsync({
             roomId: subscription.state.room?.id || '',
-            playerId: subscription.playerId,
+            playerId: databasePlayerId,
             choice: payload.choice,
           });
           break;
         case 'mission_team_selected':
           await submitMissionTeamMutation.mutateAsync({
             roomId: subscription.state.room?.id || '',
-            playerId: subscription.playerId,
+            playerId: databasePlayerId,
             teamIds: payload.selectedPlayers,
           });
           break;
         case 'mission_vote_cast':
           await submitMissionVoteMutation.mutateAsync({
             roomId: subscription.state.room?.id || '',
-            playerId: subscription.playerId,
+            playerId: databasePlayerId,
             vote: payload.choice,
           });
           break;

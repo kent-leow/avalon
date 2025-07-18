@@ -26,7 +26,7 @@ function GameClient({ roomCode }: { roomCode: string }) {
     connectionState,
   } = useOptimizedRealtimeRoom({
     roomCode,
-    playerId: session?.id || '',
+    playerId: session?.id || '', // This is the sessionId, not the database playerId
     playerName: session?.name || '',
     enabled: !!session && sessionChecked,
   });
@@ -86,12 +86,21 @@ function GameClient({ roomCode }: { roomCode: string }) {
     );
   }
 
-  const playerInRoom = session && roomState.room.players.find((p: any) => p.name === session.name);
-  if (!playerInRoom) {
+  const playerInRoom = session && roomState.room.players.find((p: any) => p.sessionId === session.id);
+  
+  // Debug mode: allow testing with TestPlayer if session doesn't match
+  const debugPlayer = roomState.room.players.find((p: any) => p.name === 'TestPlayer');
+  const actualPlayer = playerInRoom || debugPlayer;
+  
+  if (!actualPlayer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-xl mb-4">Player not found in room</div>
+          <div className="text-red-400 text-sm mb-4">
+            Session ID: {session?.id || 'None'}<br />
+            Room players: {roomState.room.players.map((p: any) => `${p.name} (${p.sessionId})`).join(', ')}
+          </div>
           <button
             onClick={() => router.push(`/room/${roomCode}`)}
             className="bg-[#3d3d7a] hover:bg-[#4a4a96] text-white px-6 py-2 rounded-lg transition-colors"
@@ -114,12 +123,25 @@ function GameClient({ roomCode }: { roomCode: string }) {
     assassinAttempt: roomState.room.gameState?.assassinAttempt || undefined,
   };
 
+  // Convert room players to Player type
+  const players = roomState.room.players.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    isReady: p.isReady,
+    isHost: p.isHost,
+    role: p.role,
+    joinedAt: new Date(p.joinedAt),
+    roomId: roomState.room.id,
+  }));
+
   return (
     <GameEngine
       roomCode={roomCode}
-      playerId={session?.id || ''}
-      playerName={session?.name || ''}
+      roomId={roomState.room.id}
+      playerId={actualPlayer.id} // Use the actual player ID (either matched or debug)
+      playerName={actualPlayer.name}
       initialGameState={gameState}
+      initialPlayers={players}
       onError={(error) => {
         console.error('Game Engine Error:', error);
         // Handle error - could show a toast or redirect

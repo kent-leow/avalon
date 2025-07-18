@@ -34,9 +34,11 @@ import {
  */
 export function GameEngine({
   roomCode,
+  roomId,
   playerId,
   playerName,
   initialGameState,
+  initialPlayers,
   onError,
   onPhaseTransition,
 }: GameEngineProps) {
@@ -45,7 +47,7 @@ export function GameEngine({
     isInitialized: false,
     currentPhase: initialGameState?.phase || 'lobby',
     gameState: initialGameState || createMockGameState(),
-    players: createMockPlayers(5),
+    players: initialPlayers || createMockPlayers(5),
     error: null,
     performance: createInitialPerformanceMetrics(),
     transitionInProgress: false,
@@ -61,19 +63,12 @@ export function GameEngine({
     try {
       console.log('Initializing Game Engine for room:', roomCode);
       
-      // TODO: Replace with real API call in Phase 2
-      // const response = await fetch(`/api/room/${roomCode}`);
-      // const roomData = await response.json();
-      
-      // For now, use mock data
-      const mockGameState = createMockGameState();
-      const mockPlayers = createMockPlayers(5);
-      
+      // Use the provided initial game state and real player data
       setEngineState(prev => ({
         ...prev,
         isInitialized: true,
-        gameState: mockGameState,
-        players: mockPlayers,
+        gameState: initialGameState || createMockGameState(),
+        players: initialPlayers || createMockPlayers(5),
         error: null,
       }));
       
@@ -94,7 +89,7 @@ export function GameEngine({
       onError?.(engineError);
       console.error('Game Engine initialization failed:', error);
     }
-  }, [roomCode, onError]);
+  }, [roomCode, initialGameState, initialPlayers, onError]);
 
   /**
    * Handle phase transitions
@@ -273,6 +268,7 @@ export function GameEngine({
           players={engineState.players}
           onPhaseTransition={handlePhaseTransition}
           roomCode={roomCode}
+          roomId={roomId}
           playerId={playerId}
         />
       </GameEngineErrorBoundary>

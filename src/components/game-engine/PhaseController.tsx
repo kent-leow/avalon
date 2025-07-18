@@ -16,6 +16,7 @@ import {
   formatPhaseName,
   getPhaseDescription
 } from '~/lib/game-engine-utils';
+import RoleRevealIntegration from '~/app/room/[roomCode]/game/RoleRevealIntegration';
 
 /**
  * Phase Controller Component
@@ -28,6 +29,7 @@ export function PhaseController({
   players,
   onPhaseTransition,
   roomCode,
+  roomId,
   playerId,
 }: PhaseControllerProps) {
   
@@ -93,26 +95,13 @@ export function PhaseController({
       
       case 'roleReveal':
         return (
-          <div className="text-center" data-testid="role-reveal-phase">
-            <h2 className="text-2xl font-bold mb-4" style={{ color: '#f8f9fa' }}>
-              Role Reveal
-            </h2>
-            <p className="text-lg mb-6" style={{ color: '#9ca3af' }}>
-              Players are learning their roles
-            </p>
-            <div 
-              className="max-w-md mx-auto p-6 rounded-lg"
-              style={{ backgroundColor: '#252547' }}
-            >
-              <div className="text-6xl mb-4">🎭</div>
-              <p className="text-xl font-semibold mb-2" style={{ color: '#f8f9fa' }}>
-                Your Role
-              </p>
-              <p className="text-sm" style={{ color: '#9ca3af' }}>
-                Role assignment in progress...
-              </p>
-            </div>
-          </div>
+          <RoleRevealIntegration
+            roomId={roomId}
+            playerId={playerId}
+            playerName={players.find(p => p.id === playerId)?.name || 'Unknown'}
+            onContinue={() => onPhaseTransition('voting')}
+            className="min-h-screen"
+          />
         );
       
       case 'voting':

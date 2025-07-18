@@ -57,9 +57,11 @@ export interface PerformanceThresholds {
  */
 export interface GameEngineProps {
   roomCode: string;
+  roomId: string;
   playerId: string;
   playerName: string;
   initialGameState?: GameState;
+  initialPlayers?: Player[];
   onError?: (error: GameEngineError) => void;
   onPhaseTransition?: (from: GamePhase, to: GamePhase) => void;
 }
@@ -73,6 +75,7 @@ export interface PhaseControllerProps {
   players: Player[];
   onPhaseTransition: (newPhase: GamePhase) => void;
   roomCode: string;
+  roomId: string;
   playerId: string;
 }
 

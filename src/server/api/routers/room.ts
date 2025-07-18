@@ -1236,8 +1236,8 @@ export const roomRouter = createTRPCRouter({
         throw new Error("Role information not available yet");
       }
       
-      // Parse player role data
-      const playerRoleData = player.roleData ? JSON.parse(player.roleData as string) : {};
+      // Get player role data (already parsed as JSON object)
+      const playerRoleData = player.roleData as any || {};
       const playerRole = {
         id: player.role,
         name: player.role,
@@ -1256,7 +1256,7 @@ export const roomRouter = createTRPCRouter({
         role: {
           id: p.role || 'servant',
           name: p.role || 'servant',
-          team: p.roleData ? (JSON.parse(p.roleData as string).team || 'good') : 'good',
+          team: p.roleData ? ((p.roleData as any).team || 'good') : 'good',
           description: '',
           abilities: [],
           seesEvil: false,

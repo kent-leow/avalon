@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PlayerRoleCard from "./PlayerRoleCard";
 import KnownPlayersGrid from "./KnownPlayersGrid";
 import RoleRevealTimer from "./RoleRevealTimer";
@@ -37,20 +37,20 @@ export default function RoleRevealScreen({
   const [canContinue, setCanContinue] = useState(false);
 
   // Auto-reveal knowledge after role card animation
-  useState(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setShowKnowledge(true);
     }, 1500);
     return () => clearTimeout(timer);
-  });
+  }, []);
 
   // Enable continue button after knowledge is shown
-  useState(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setCanContinue(true);
     }, 3000);
     return () => clearTimeout(timer);
-  });
+  }, []);
 
   const handleTimeUp = () => {
     setCanContinue(true);
