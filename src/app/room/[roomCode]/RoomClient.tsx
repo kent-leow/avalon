@@ -82,8 +82,14 @@ export function RoomClient({ roomCode }: RoomClientProps) {
       }
     } else if (error && hasValidSession) {
       // Handle specific error cases
-      if (error?.message?.includes('Room not found')) {
-        console.log('Room not found, redirecting to home');
+      if (error?.message?.includes('Room not found') || 
+          error?.message?.includes('Room has expired') ||
+          error?.message?.includes('not found') ||
+          error?.message?.includes('does not exist')) {
+        console.log('Room not found or expired, clearing session and redirecting to home');
+        clearSession();
+        setHasValidSession(false);
+        setShouldCheckRoom(false);
         router.replace('/');
         return;
       }

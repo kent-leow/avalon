@@ -36,7 +36,10 @@ export function SessionExpirationProvider({ children }: { children: React.ReactN
           
           if (!response.ok) {
             console.log('Room check failed with status:', response.status);
-            if (response.status === 404 || response.status === 400) {
+            // Clear session for any HTTP error status (404, 400, 500, etc.)
+            // This covers cases where room doesn't exist or server errors indicate room issues
+            if (response.status === 404 || response.status === 400 || response.status === 500) {
+              console.log('Room check failed, clearing session and redirecting to home');
               clearSession();
               router.push('/');
             }
@@ -52,8 +55,10 @@ export function SessionExpirationProvider({ children }: { children: React.ReactN
             if (errorMessage.includes('expired') || 
                 errorMessage.includes('not found') || 
                 errorMessage.includes('does not exist') ||
+                errorMessage.includes('Room not found') ||
+                errorMessage.includes('Room has expired') ||
                 error.data?.code === 'NOT_FOUND') {
-              console.log('Room expired or not found, clearing session');
+              console.log('Room expired or not found, clearing session and redirecting to home');
               clearSession();
               router.push('/');
             }
@@ -66,6 +71,7 @@ export function SessionExpirationProvider({ children }: { children: React.ReactN
             console.log('Network error, keeping session');
           } else {
             // Other errors - clear session to be safe
+            console.log('Parse or other error, clearing session to be safe');
             clearSession();
             router.push('/');
           }

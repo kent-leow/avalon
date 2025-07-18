@@ -140,16 +140,22 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
       const errorMessage = roomState.error.toLowerCase();
       
       // Check for room not found errors
-      if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
-        console.log('Room not found error detected, clearing session and redirecting to home');
+      if (errorMessage.includes('not found') || 
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('room not found') ||
+          errorMessage.includes('room has expired')) {
+        console.log('Room not found or expired error detected, clearing session and redirecting to home');
         clearSession();
         router.push('/');
         return;
       }
       
       // Check for other fatal errors
-      if (errorMessage.includes('expired') || errorMessage.includes('invalid')) {
-        console.log('Room session invalid/expired, clearing session and redirecting to home');
+      if (errorMessage.includes('expired') || 
+          errorMessage.includes('invalid') ||
+          errorMessage.includes('unauthorized') ||
+          errorMessage.includes('access denied')) {
+        console.log('Room session invalid/expired/unauthorized, clearing session and redirecting to home');
         clearSession();
         router.push('/');
         return;
