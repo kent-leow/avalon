@@ -617,7 +617,38 @@ export const roomRouter = createTRPCRouter({
       
       // Get settings and validate role configuration
       const settings = room.settings as unknown as GameSettings;
-      const roleValidation = validateRoleConfiguration(room.players.length, settings.characters);
+      
+      // Map character names to role IDs
+      const characterToRoleMap: Record<string, string> = {
+        'merlin': 'merlin',
+        'percival': 'percival',
+        'loyal': 'servant',
+        'loyal servant': 'servant',
+        'loyal servant of arthur': 'servant',
+        'servant': 'servant',
+        'servant of arthur': 'servant',
+        'assassin': 'assassin',
+        'morgana': 'morgana',
+        'mordred': 'mordred',
+        'oberon': 'oberon',
+        'minion': 'minion',
+        'minion of mordred': 'minion',
+      };
+      
+      // Convert character names to role IDs
+      const roleIds = (settings.characters || []).map((char: string) => {
+        const lowercaseChar = char.toLowerCase();
+        return characterToRoleMap[lowercaseChar] || lowercaseChar;
+      });
+      
+      // If no characters specified, use default configuration
+      let finalRoleIds = roleIds;
+      if (finalRoleIds.length === 0) {
+        const { getStandardRoleConfiguration } = await import("~/lib/role-assignment");
+        finalRoleIds = getStandardRoleConfiguration(room.players.length);
+      }
+      
+      const roleValidation = validateRoleConfiguration(room.players.length, finalRoleIds);
       if (!roleValidation.valid) {
         throw new Error(`Invalid role configuration: ${roleValidation.errors.join(", ")}`);
       }
@@ -635,7 +666,7 @@ export const roomRouter = createTRPCRouter({
         sessionId: p.sessionId || undefined,
       }));
       
-      const roleAssignments = assignRoles(playersForAssignment, settings.characters);
+      const roleAssignments = assignRoles(playersForAssignment, finalRoleIds);
       
       // Create updated game state
       const stateMachine = new GameStateMachine(gameState);
