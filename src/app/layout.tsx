@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { SessionExpirationProvider } from "~/components/providers/SessionExpirationProvider";
+import { SessionCleanupProvider } from "~/components/providers/SessionCleanupProvider";
 import { GlobalSSEProvider } from "~/context/GlobalSSEContext";
 
 export const metadata: Metadata = {
@@ -28,9 +29,11 @@ export default function RootLayout({
       <body>
         <TRPCReactProvider>
           <GlobalSSEProvider>
-            <SessionExpirationProvider>
-              {children}
-            </SessionExpirationProvider>
+            <SessionCleanupProvider>
+              <SessionExpirationProvider>
+                {children}
+              </SessionExpirationProvider>
+            </SessionCleanupProvider>
           </GlobalSSEProvider>
         </TRPCReactProvider>
       </body>
