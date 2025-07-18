@@ -38,6 +38,16 @@ import {
   shouldTriggerAutoCleanup,
   createHostNotification
 } from "~/lib/host-management-utils";
+import {
+  notifyPlayerJoined,
+  notifyPlayerLeft,
+  notifyPlayerReadyChanged,
+  notifyGamePhaseChanged,
+  notifyVoteCast,
+  notifySettingsChanged,
+  notifyGameStarted,
+  syncRoomState
+} from "~/server/realtime-events";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
 import type { RoleKnowledge } from "~/types/role-knowledge";
@@ -372,6 +382,9 @@ export const roomRouter = createTRPCRouter({
         throw new Error('Failed to create session. Please try again.');
       }
       
+      // Emit real-time event for player joined
+      await notifyPlayerJoined(room.id, roomCode, player.id, playerName, ctx.db);
+      
       return {
         success: true,
         room: {
@@ -507,6 +520,15 @@ export const roomRouter = createTRPCRouter({
           players: true,
         },
       });
+      
+      // Emit real-time event for settings update
+      await notifySettingsChanged(
+        updatedRoom.id,
+        updatedRoom.code,
+        updatedRoom.settings,
+        'system', // changedBy - we don't have user context here
+        ctx.db
+      );
       
       return {
         success: true,
@@ -662,6 +684,9 @@ export const roomRouter = createTRPCRouter({
         
         return { room: updatedRoom, players: updatedPlayers };
       });
+      
+      // Emit real-time event for game started
+      await notifyGameStarted(result.room.id, room.code, newGameState, ctx.db);
       
       return {
         success: true,
@@ -849,6 +874,14 @@ export const roomRouter = createTRPCRouter({
         where: { id: playerId },
         data: { isReady },
       });
+      
+      // Emit real-time event for ready status change
+      await notifyPlayerReadyChanged(
+        player.room.code,
+        playerId,
+        player.name,
+        isReady
+      );
       
       return {
         success: true,

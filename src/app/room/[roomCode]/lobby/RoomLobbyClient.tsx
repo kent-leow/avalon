@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '~/trpc/react';
 import { waitForSession, verifyClientSession } from '~/lib/session-sync';
 import { getSession, clearSession, extendSession } from '~/lib/session';
+import { useRealtimeRoom } from '~/hooks/useRealtimeRoom';
 import StartGameSection from './StartGameSection';
 import LobbySharing from './LobbySharing';
 import PlayerManagementSection from './PlayerManagementSection';
@@ -19,6 +19,19 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
   const router = useRouter();
   const [session, setSession] = useState<PlayerSession | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+
+  // Use real-time room hook instead of polling
+  const {
+    roomState,
+    isConnected,
+    connectionState,
+    updatePlayerReady,
+  } = useRealtimeRoom({
+    roomCode,
+    playerId: session?.id || '',
+    playerName: session?.name || '',
+    enabled: !!session && sessionChecked,
+  });
 
   useEffect(() => {
     const checkSession = async () => {
@@ -77,106 +90,72 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
     checkSession();
   }, [roomCode, router]);
 
-  const { data: roomData, isLoading, error } = api.room.getRoomInfo.useQuery(
-    { roomCode },
-    { 
-      enabled: !!roomCode && sessionChecked,
-      refetchInterval: (query) => {
-        // Stop polling if there's a persistent error
-        if (query?.state?.error) return false;
-        return 2000; // Poll every 2 seconds for real-time updates
-      },
-      retry: (failureCount, error: any) => {
-        // Don't retry if room doesn't exist or is expired
-        if (error?.message?.includes('Room not found') || 
-            error?.message?.includes('expired') ||
-            error?.data?.code === 'NOT_FOUND') {
-          return false;
-        }
-        return failureCount < 3;
-      },
-      retryDelay: 1000, // Wait 1 second between retries
-    }
-  );
-
-  // Handle persistent room errors - clear session and redirect
+  // Handle real-time connection errors
   useEffect(() => {
-    if (error && sessionChecked) {
-      console.log('Room loading error:', error);
-      
-      // Check for room not found, expired, or database errors
-      const isRoomNotFound = error.message?.includes('Room not found') || 
-                           error.message?.includes('expired') ||
-                           error.data?.code === 'NOT_FOUND' ||
-                           error.data?.httpStatus === 500;
-      
-      if (isRoomNotFound) {
-        console.log('Room not found or error - clearing session and redirecting');
-        clearSession();
-        router.push(`/room/${roomCode}`);
-        return;
-      }
+    if (sessionChecked && !isConnected && connectionState.status === 'error') {
+      console.log('Real-time connection failed, falling back to API');
+      // Could implement fallback polling here if needed
     }
-  }, [error, sessionChecked, roomCode, router]);
+  }, [sessionChecked, isConnected, connectionState.status]);
 
-  // Extend session on successful data fetch
+  // Extend session on successful real-time updates
   useEffect(() => {
-    if (roomData && !isLoading) {
+    if (roomState.room && !roomState.isLoading) {
       extendSession();
     }
-  }, [roomData, isLoading]);
+  }, [roomState.room, roomState.isLoading]);
 
   // Check if current player is host
-  const isHost = session && roomData?.players?.find((p: any) => p.name === session.name)?.isHost;
+  const isHost = session && roomState.room?.players?.find((p: any) => p.name === session.name)?.isHost;
 
   // Additional session validation - check if session belongs to this room
   useEffect(() => {
-    if (session && roomData) {
+    if (session && roomState.room) {
       // Check if the session is for this room
-      const playerInRoom = roomData.players.find((p: any) => p.name === session.name);
+      const playerInRoom = roomState.room.players.find((p: any) => p.name === session.name);
       
       if (!playerInRoom) {
         console.log('Session player not found in room, checking if this is a new room...');
         // For newly created rooms, the host might not appear immediately
         // Only redirect if this persists for more than 5 seconds
         const checkTimer = setTimeout(() => {
-          const retryPlayerInRoom = roomData.players.find((p: any) => p.name === session.name);
+          const retryPlayerInRoom = roomState.room?.players.find((p: any) => p.name === session.name);
           if (!retryPlayerInRoom) {
             console.log('Session player still not found after extended wait, redirecting to join');
             clearSession();
             router.push(`/room/${roomCode}`);
           }
-        }, 5000); // Wait 5 seconds for database sync
+        }, 5000); // Wait 5 seconds for real-time sync
         
         return () => clearTimeout(checkTimer);
       }
     }
-  }, [session, roomData, roomCode, router]);
+  }, [session, roomState.room, roomCode, router]);
 
-  if (!sessionChecked || isLoading) {
+  if (!sessionChecked || roomState.isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
           <div className="text-white text-xl">Loading room...</div>
+          {connectionState.status === 'reconnecting' && (
+            <div className="text-slate-300 text-sm mt-2">Connecting to real-time updates...</div>
+          )}
         </div>
       </div>
     );
   }
 
-  if (error || !roomData) {
-    // Clear session for any error since we already handled it above
-    clearSession();
-
+  if (roomState.error || !roomState.room) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547] flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-xl mb-4">
-            {error ? 'Error loading room' : 'Room not found'}
+            {roomState.error ? 'Error loading room' : 'Room not found'}
           </div>
-          {error && (
+          {roomState.error && (
             <div className="text-red-400 text-sm mb-4 max-w-md">
-              {error.message || 'Unknown error occurred'}
+              {roomState.error}
             </div>
           )}
           <div className="space-y-2">
@@ -235,6 +214,17 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
                   Host
                 </div>
               )}
+              {/* Connection indicator */}
+              <div className={`px-3 py-1 rounded-full text-xs flex items-center gap-2 ${
+                isConnected 
+                  ? 'bg-green-500/20 text-green-400' 
+                  : 'bg-yellow-500/20 text-yellow-400'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  isConnected ? 'bg-green-400' : 'bg-yellow-400'
+                } ${isConnected ? 'animate-pulse' : ''}`}></div>
+                {isConnected ? 'Live' : 'Reconnecting'}
+              </div>
             </div>
           </div>
 
@@ -245,9 +235,13 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
               {/* Players Section */}
               <div>
                 <PlayerManagementSection
-                  roomId={roomData.id}
+                  roomId={roomState.room.id}
                   roomCode={roomCode}
-                  players={roomData.players}
+                  players={roomState.room.players.map(p => ({
+                    ...p,
+                    joinedAt: new Date(),
+                    roomId: roomState.room!.id,
+                  }))}
                   isHost={isHost ?? false}
                 />
               </div>
@@ -255,7 +249,7 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
               {/* Game Start Section */}
               <div>
                 <StartGameSection
-                  roomId={roomData.id}
+                  roomId={roomState.room.id}
                   roomCode={roomCode}
                 />
               </div>
@@ -264,8 +258,8 @@ export function RoomLobbyClient({ roomCode }: RoomLobbyClientProps) {
             {/* Bottom Row - Game Settings (Full Width) */}
             <div>
               <GameSettingsSection
-                roomId={roomData.id}
-                currentSettings={roomData.settings}
+                roomId={roomState.room.id}
+                currentSettings={roomState.room.settings}
                 isHost={isHost ?? false}
               />
             </div>

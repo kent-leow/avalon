@@ -48,6 +48,7 @@ export type RealTimeEventType =
   | 'game_state_updated'
   | 'settings_changed'
   | 'player_ready_changed'
+  | 'player_ready_status'
   | 'role_revealed'
   | 'assassin_target_selected'
   | 'game_ended'
@@ -55,7 +56,9 @@ export type RealTimeEventType =
   | 'player_activity'
   | 'connection_status_changed'
   | 'sync_conflict'
-  | 'error_occurred';
+  | 'error_occurred'
+  | 'voting_progress_updated'
+  | 'room_state_sync';
 
 // Action Queue System
 export interface QueuedAction {
