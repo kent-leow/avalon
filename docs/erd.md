@@ -39,16 +39,6 @@ Stores player information and room associations.
 | sessionId | String | Session identifier | Unique, Indexed, Nullable |
 | roomId | String | Associated room ID | Foreign Key, Indexed |
 
-#### Post
-Legacy table for blog posts (T3 Stack default).
-
-| Column | Type | Description | Constraints |
-|--------|------|-------------|-------------|
-| id | Int | Primary key | Auto-increment, Primary Key |
-| name | String | Post title | Indexed |
-| createdAt | DateTime | Creation timestamp | Default: now() |
-| updatedAt | DateTime | Last update timestamp | Auto-updated |
-
 ## Relationships
 
 ### Room ↔ Player (One-to-Many)
@@ -68,9 +58,6 @@ Legacy table for blog posts (T3 Stack default).
 ### Player Table
 - `roomId` - For room-based player queries
 - `sessionId` (unique) - For session-based lookups
-
-### Post Table
-- `name` - For post searches
 
 ## JSON Schema
 
@@ -181,13 +168,6 @@ erDiagram
         datetime joinedAt
         string sessionId UK
         string roomId FK
-    }
-    
-    Post {
-        int id PK
-        string name
-        datetime createdAt
-        datetime updatedAt
     }
     
     Room ||--o{ Player : "has"
