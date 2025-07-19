@@ -179,6 +179,5 @@ export default function GamePage({ params }: PageProps) {
     );
   }
 
-  // Use dynamic game engine only
-  return null;
+  return <GameClient roomCode={roomCode} />;
 }

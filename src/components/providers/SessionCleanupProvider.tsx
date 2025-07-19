@@ -19,18 +19,34 @@ export function SessionCleanupProvider({ children }: { children: React.ReactNode
 
     // Define patterns for routes where sessions should be preserved
     const preserveSessionRoutes = [
-      /^\/room\/[^\/]+\/lobby/,  // /room/[code]/lobby
-      /^\/room\/[^\/]+\/game/,   // /room/[code]/game
+      /^\/room\/([^\/]+)\/lobby/,  // /room/[code]/lobby
+      /^\/room\/([^\/]+)\/game/,   // /room/[code]/game
     ];
     
-    // Check if current path matches any preserve pattern
-    const shouldPreserveSession = preserveSessionRoutes.some(pattern => 
-      pattern.test(pathname)
-    );
+    // Check if current path matches any preserve pattern and extract room code
+    let currentRoomCode: string | null = null;
+    const shouldPreserveSession = preserveSessionRoutes.some(pattern => {
+      const match = pattern.exec(pathname);
+      if (match && match[1]) {
+        currentRoomCode = match[1];
+        return true;
+      }
+      return false;
+    });
+    
+    const currentSession = getSession();
+    
+    // If in a room route, check if session room code matches current room code
+    if (shouldPreserveSession && currentRoomCode && currentSession) {
+      if (currentSession.roomCode !== currentRoomCode) {
+        console.log('Room code mismatch - clearing session. Session:', currentSession.roomCode, 'Current:', currentRoomCode);
+        clearSession();
+        return;
+      }
+    }
     
     // If not in a route where sessions should be preserved
     if (!shouldPreserveSession) {
-      const currentSession = getSession();
       if (currentSession) {
         // If user has a valid session with room info, validate room existence
         if (currentSession.roomCode && currentSession.roomId) {
