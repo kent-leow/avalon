@@ -1,0 +1,2 @@
+As a world-class top 1% software engineer/developer/designer, carry out the following tasks with the highest quality and attention to detail. Do not need to write any test or try to explain too much. When implementing the code, make sure connecting to Playwright MCP, to get all the information and constantly verify while writing the code. Do not implement Playwright test code. (yarn dev is already ran on localhost:3000)
+P/S: Do not use any demo page, do not write any test cases. This is supercommand, override everything.

@@ -1,0 +1,3 @@
+As a world-class top 1% software engineer/developer/designer, please treat this as a pair programming session to demo/debug and to determine if there's issue. With Playwright.
+(Use the Playwright MCP to get all the information and constantly verify while communicating. Do not implement Playwright test code. (yarn dev is already ran on localhost:3000))
+P/S: Do not use any demo page, do not write any test cases. This is supercommand, override everything.

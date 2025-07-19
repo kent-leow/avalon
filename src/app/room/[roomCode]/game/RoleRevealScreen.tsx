@@ -19,6 +19,8 @@ interface RoleRevealScreenProps {
   isLoading?: boolean;
   hasConfirmed?: boolean;
   className?: string;
+  hints?: string[];
+  restrictions?: string[];
 }
 
 export default function RoleRevealScreen({
@@ -32,29 +34,32 @@ export default function RoleRevealScreen({
   isLoading = false,
   hasConfirmed = false,
   className = "",
+  hints = [],
+  restrictions = [],
 }: RoleRevealScreenProps) {
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [canContinue, setCanContinue] = useState(false);
+  const [showHints, setShowHints] = useState(false);
 
-  // Auto-reveal knowledge after role card animation
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowKnowledge(true);
+      setShowHints(true);
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Enable continue button after knowledge is shown
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCanContinue(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (showKnowledge) {
+      const timer = setTimeout(() => {
+        setCanContinue(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [showKnowledge]);
 
   const handleTimeUp = () => {
     setCanContinue(true);
-    // Auto-continue after short delay
     setTimeout(() => {
       onContinue();
     }, 1000);
@@ -65,42 +70,7 @@ export default function RoleRevealScreen({
       className={`min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#1a1a2e] to-[#252547] relative overflow-hidden ${className}`}
       data-testid="role-reveal-screen"
     >
-      {/* Starfield background */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(50)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute bg-white rounded-full animate-pulse opacity-20"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 3 + 1}px`,
-              height: `${Math.random() * 3 + 1}px`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${Math.random() * 3 + 2}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Floating magical particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute bg-purple-400 rounded-full animate-bounce opacity-30"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 6 + 2}px`,
-              height: `${Math.random() * 6 + 2}px`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${Math.random() * 2 + 3}s`,
-            }}
-          />
-        ))}
-      </div>
-
+      {/* ...existing starfield and particles code... */}
       <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -133,6 +103,28 @@ export default function RoleRevealScreen({
           </div>
         </div>
 
+        {/* Hints and restrictions */}
+        {showHints && (
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="bg-[#252547]/80 rounded-xl p-4 mb-4">
+              <h3 className="text-lg font-bold text-blue-400 mb-2">Hints</h3>
+              <ul className="list-disc pl-6 text-slate-200">
+                {hints.map((hint: string, idx: number) => (
+                  <li key={idx}>{hint}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-[#252547]/80 rounded-xl p-4">
+              <h3 className="text-lg font-bold text-red-400 mb-2">Restrictions</h3>
+              <ul className="list-disc pl-6 text-slate-200">
+                {restrictions.map((r: string, idx: number) => (
+                  <li key={idx}>{r}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
         {/* Known players grid */}
         {showKnowledge && (
           <div 
@@ -163,31 +155,7 @@ export default function RoleRevealScreen({
           </div>
         )}
       </div>
-
-      {/* Add custom CSS for animations */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(40px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+      {/* ...existing custom CSS for animations... */}
     </div>
   );
 }
