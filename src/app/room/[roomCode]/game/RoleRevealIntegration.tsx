@@ -133,6 +133,8 @@ export default function RoleRevealIntegration({
         onContinue={handleContinue}
         isLoading={confirmRoleRevealedMutation.isPending}
         hasConfirmed={hasConfirmed}
+        hints={roleData.hints}
+        restrictions={roleData.restrictions}
       />
     </div>
   );
