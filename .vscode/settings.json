@@ -2,5 +2,10 @@
     "chat.agent.maxRequests": 2500,
     "github.copilot.chat.agent.terminal.allowList": {
         "/.*/": true
+    },
+    "github.copilot.chat.agent.terminal.denyList": {
+        "Remove-Item": false,
+        "rm": false,
+        "curl": false
     }
 }
