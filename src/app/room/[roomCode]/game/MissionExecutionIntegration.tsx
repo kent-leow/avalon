@@ -41,27 +41,8 @@ export default function MissionExecutionIntegration() {
   // Submit mission vote mutation
   const submitVoteMutation = api.room.submitMissionVote.useMutation({
     onSuccess: (data) => {
-      if (data.result) {
-        // Create mission result for display
-        const result: MissionResult = {
-          outcome: data.result.outcome as 'success' | 'failure',
-          votes: data.result.votes,
-          failVotesRequired: data.result.failVotesRequired,
-          gameImpact: {
-            goodTeamWins: data.result.outcome === 'success' ? 1 : 0,
-            evilTeamWins: data.result.outcome === 'failure' ? 1 : 0,
-            isGameOver: false,
-            nextPhase: 'mission-selection'
-          },
-          animations: [
-            { type: 'vote-reveal', delay: 1000, duration: 2000, intensity: 'normal' },
-            { type: 'calculation', delay: 2000, duration: 2000, intensity: 'normal' },
-            { type: 'outcome', delay: 3000, duration: 1500, intensity: 'dramatic' },
-            { type: 'impact', delay: 4000, duration: 1000, intensity: 'normal' }
-          ]
-        };
-        setMissionResult(result);
-      }
+      // For now, just handle the vote submission success
+      // Mission result will be handled through SSE when the phase transitions
       refetchExecution();
     },
     onError: (error) => {

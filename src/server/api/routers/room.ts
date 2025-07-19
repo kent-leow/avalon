@@ -36,6 +36,7 @@ import {
   notifyGameStarted,
   notifyHostTransfer
 } from "~/server/sse-events";
+import { getPhaseOrchestrator } from "~/server/game-orchestration/PhaseOrchestrator";
 import type { GameState, GameSettings } from "~/types/room";
 import type { StartRequirement } from "~/types/game-state";
 import type { MissionPlayer } from "~/types/mission";
@@ -1315,51 +1316,19 @@ export const roomRouter = createTRPCRouter({
         where: { id: playerId },
         data: { isReady: true },
       });
+
+      // Check for automatic phase transition
+      const orchestrator = getPhaseOrchestrator(ctx.db);
+      const transitionResult = await orchestrator.checkPhaseTransition(roomId);
       
-      // Check if all players have seen their roles
-      const updatedRoom = await ctx.db.room.findUnique({
-        where: { id: roomId },
-        include: {
-          players: {
-            select: {
-              isReady: true,
-            },
-          },
-        },
-      });
-      
-      if (!updatedRoom) {
-        throw new Error("Room not found");
+      if (transitionResult.transitioned) {
+        console.log(`[Room] Phase transition triggered by role confirmation: ${transitionResult.fromPhase} -> ${transitionResult.toPhase}`);
       }
-      
-      const allPlayersReady = updatedRoom.players.every(p => p.isReady);
-      
-      // If all players have seen their roles, advance to next phase
-      if (allPlayersReady) {
-        const gameState = room.gameState as unknown as GameState;
-        const stateMachine = new GameStateMachine(gameState);
-        const validNextPhases = stateMachine.getValidNextPhases();
-        const nextPhase = validNextPhases[0] || 'voting'; // Default to voting phase
-        
-        const updatedGameState = {
-          ...gameState,
-          phase: nextPhase,
-          lastUpdated: new Date(),
-        };
-        
-        await ctx.db.room.update({
-          where: { id: roomId },
-          data: {
-            phase: nextPhase,
-            gameState: updatedGameState as any,
-          },
-        });
-      }
-      
+
       return {
         success: true,
-        allPlayersReady,
-        nextPhase: allPlayersReady ? 'voting' : 'roleReveal',
+        allPlayersReady: transitionResult.transitioned,
+        nextPhase: transitionResult.toPhase || 'roleReveal',
       };
     }),
 
@@ -1579,59 +1548,33 @@ export const roomRouter = createTRPCRouter({
       let nextPhase = room.phase;
       let votingResult = null;
       
-      if (allPlayersVoted) {
-        // Calculate voting results
-        const currentRejections = gameState.rejectionCount || 0;
-        const currentLeaderIndex = gameState.leaderIndex || 0;
-        
-        votingResult = calculateVotingResults(
-          updatedVotes,
-          room.players.length,
-          currentRejections,
-          currentLeaderIndex,
-          room.players.length
-        );
-        
-        nextPhase = votingResult.nextPhase;
-        
-        // Update game state based on results
-        const updatedGameState = {
-          ...gameState,
-          votes: updatedVotes,
-          votingResult,
-          phase: nextPhase,
-          rejectionCount: votingResult.approved ? currentRejections : currentRejections + 1,
-          leaderIndex: votingResult.nextLeaderIndex ?? currentLeaderIndex,
-          lastUpdated: new Date(),
-        };
-        
-        await ctx.db.room.update({
-          where: { id: roomId },
-          data: {
-            phase: nextPhase,
-            gameState: updatedGameState as any,
-          },
-        });
-      } else {
-        // Update votes in game state
-        const updatedGameState = {
-          ...gameState,
-          votes: updatedVotes,
-          lastUpdated: new Date(),
-        };
-        
-        await ctx.db.room.update({
-          where: { id: roomId },
-          data: {
-            gameState: updatedGameState as any,
-          },
-        });
-      }
+      // Update votes in game state first
+      const updatedGameState = {
+        ...gameState,
+        votes: updatedVotes,
+        lastUpdated: new Date(),
+      };
       
+      await ctx.db.room.update({
+        where: { id: roomId },
+        data: {
+          gameState: updatedGameState as any,
+        },
+      });
+
+      // Check for automatic phase transition
+      const orchestrator = getPhaseOrchestrator(ctx.db);
+      const transitionResult = await orchestrator.checkPhaseTransition(roomId);
+      
+      if (transitionResult.transitioned) {
+        console.log(`[Room] Phase transition triggered by vote: ${transitionResult.fromPhase} -> ${transitionResult.toPhase}`);
+        nextPhase = transitionResult.toPhase || nextPhase;
+      }
+
       return {
         success: true,
         vote: newVote,
-        allPlayersVoted,
+        allPlayersVoted: transitionResult.transitioned || allPlayersVoted,
         result: votingResult,
         nextPhase,
       };
@@ -1793,55 +1736,10 @@ export const roomRouter = createTRPCRouter({
       let missionResult = null;
       let nextPhase = room.phase;
       
-      if (allVoted) {
-        // Calculate mission result
-        const successVotes = updatedMissionVotes.filter(v => v.vote === 'success').length;
-        const failureVotes = updatedMissionVotes.filter(v => v.vote === 'failure').length;
-        
-        // Determine failure requirement (Mission 4 with 7+ players needs 2 fails)
-        const currentMission = gameState.currentMission || 1;
-        const failVotesRequired = currentMission === 4 && room.players.length >= 7 ? 2 : 1;
-        
-        const outcome = failureVotes >= failVotesRequired ? 'failure' : 'success';
-        
-        missionResult = {
-          outcome,
-          votes: {
-            success: successVotes,
-            failure: failureVotes,
-          },
-          failVotesRequired,
-        };
-        
-        // Update mission outcomes array
-        const missionOutcomes = gameState.missionOutcomes || [];
-        const updatedOutcomes = [...missionOutcomes];
-        
-        if (updatedOutcomes.length === (currentMission - 1)) {
-          updatedOutcomes.push(outcome);
-        } else {
-          updatedOutcomes[currentMission - 1] = outcome;
-        }
-        
-        // Check if game is over
-        const goodWins = updatedOutcomes.filter(o => o === 'success').length;
-        const evilWins = updatedOutcomes.filter(o => o === 'failure').length;
-        
-        if (goodWins >= 3) {
-          nextPhase = 'assassin-attempt';
-        } else if (evilWins >= 3) {
-          nextPhase = 'game-over';
-        } else {
-          nextPhase = 'mission-selection';
-        }
-      }
-      
-      // Update room
+      // Update room with vote
       const updatedGameState = {
         ...gameState,
         missionVotes: updatedMissionVotes,
-        missionResult,
-        missionOutcomes: missionResult ? (gameState.missionOutcomes || []).concat(missionResult.outcome as 'success' | 'failure') : gameState.missionOutcomes,
         lastUpdated: new Date(),
       };
       
@@ -1849,14 +1747,22 @@ export const roomRouter = createTRPCRouter({
         where: { id: roomId },
         data: {
           gameState: JSON.parse(JSON.stringify(updatedGameState)),
-          phase: nextPhase,
         },
       });
+
+      // Check for automatic phase transition
+      const orchestrator = getPhaseOrchestrator(ctx.db);
+      const transitionResult = await orchestrator.checkPhaseTransition(roomId);
       
+      if (transitionResult.transitioned) {
+        console.log(`[Room] Phase transition triggered by mission vote: ${transitionResult.fromPhase} -> ${transitionResult.toPhase}`);
+        nextPhase = transitionResult.toPhase || nextPhase;
+      }
+
       return {
         success: true,
         vote: newVote,
-        allVoted,
+        allVoted: transitionResult.transitioned || allVoted,
         result: missionResult,
         nextPhase,
       };
