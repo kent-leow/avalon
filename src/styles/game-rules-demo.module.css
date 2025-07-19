@@ -1,0 +1,547 @@
+/* Game Rules Demo Styles */
+
+.demo {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f172a 100%);
+  color: #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.error {
+  padding: 2rem;
+  text-align: center;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+}
+
+/* Header */
+.header {
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #9ca3af;
+  margin: 0 0 1.5rem 0;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.controlLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #d1d5db;
+}
+
+.select {
+  padding: 0.5rem 0.75rem;
+  background: rgba(55, 65, 81, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  border-radius: 6px;
+  color: #e5e7eb;
+  font-size: 0.875rem;
+  min-width: 200px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+}
+
+/* Content */
+.content {
+  padding: 2rem;
+}
+
+.section {
+  margin-bottom: 3rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sectionTitle::before {
+  content: '';
+  width: 4px;
+  height: 1.5rem;
+  background: linear-gradient(45deg, #fbbf24, #f59e0b);
+  border-radius: 2px;
+}
+
+/* Game Info */
+.gameInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(55, 65, 81, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.infoLabel {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.infoValue {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+/* Phase styles */
+.phaselobby {
+  color: #93c5fd !important;
+}
+
+.phaserolereveal {
+  color: #c4b5fd !important;
+}
+
+.phaseteamselection {
+  color: #fde68a !important;
+}
+
+.phasemissionvoting {
+  color: #86efac !important;
+}
+
+.phasemissionexecution {
+  color: #fca5a5 !important;
+}
+
+.phasegameend {
+  color: #fdba74 !important;
+}
+
+/* Player Grid */
+.playerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.playerCard {
+  padding: 1.5rem;
+  background: rgba(55, 65, 81, 0.4);
+  border: 2px solid rgba(75, 85, 99, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.playerCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--role-color, #6b7280);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.playerCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border-color: var(--role-color, #6b7280);
+}
+
+.playerCard:hover::before,
+.playerCard.selected::before {
+  transform: scaleX(1);
+}
+
+.playerCard.selected {
+  border-color: var(--role-color, #6b7280);
+  background: rgba(55, 65, 81, 0.6);
+}
+
+/* Role-specific colors */
+.rolegood {
+  --role-color: #22c55e;
+}
+
+.roleevil {
+  --role-color: #ef4444;
+}
+
+.rolemerlin {
+  --role-color: #3b82f6;
+}
+
+.roleassassin {
+  --role-color: #dc2626;
+}
+
+.rolepercival {
+  --role-color: #06b6d4;
+}
+
+.rolemorgana {
+  --role-color: #7c3aed;
+}
+
+.rolemordred {
+  --role-color: #991b1b;
+}
+
+.roleoberon {
+  --role-color: #059669;
+}
+
+.playerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.playerName {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.hostBadge {
+  padding: 0.25rem 0.5rem;
+  background: linear-gradient(45deg, #fbbf24, #f59e0b);
+  color: #1f2937;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.playerRole {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--role-color, #9ca3af);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.playerStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.statusIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.connected {
+  background: #22c55e;
+}
+
+.disconnected {
+  background: #ef4444;
+}
+
+.reconnecting {
+  background: #f59e0b;
+  animation: pulse 2s infinite;
+}
+
+/* Player Details */
+.playerDetails {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(17, 24, 39, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.detailsTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: #f3f4f6;
+}
+
+.roleInfo {
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+  padding-top: 1rem;
+}
+
+/* Role Description */
+.roleDescription {
+  color: #e5e7eb;
+}
+
+.roleTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: #fbbf24;
+}
+
+.roleText {
+  font-size: 0.875rem;
+  color: #d1d5db;
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+}
+
+.roleGoal {
+  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 6px;
+  color: #93c5fd;
+}
+
+.roleAbilities {
+  font-size: 0.875rem;
+}
+
+.abilityList {
+  margin: 0.5rem 0 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.abilityItem {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.abilityItem::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #fbbf24;
+  font-weight: bold;
+}
+
+.abilityItem:last-child {
+  border-bottom: none;
+}
+
+/* Mission Grid */
+.missionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.missionCard {
+  padding: 1.5rem;
+  background: rgba(55, 65, 81, 0.4);
+  border: 2px solid rgba(75, 85, 99, 0.3);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.missionCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--mission-color, #6b7280);
+}
+
+.missionCard.pending {
+  --mission-color: #6b7280;
+}
+
+.missionCard.inprogress {
+  --mission-color: #f59e0b;
+}
+
+.missionCard.success {
+  --mission-color: #22c55e;
+}
+
+.missionCard.failure {
+  --mission-color: #ef4444;
+}
+
+.missionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.missionNumber {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.missionStatus {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.missionStatus.pending {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+.missionStatus.inprogress {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.missionStatus.success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.missionStatus.failure {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.missionInfo {
+  color: #d1d5db;
+}
+
+.missionDetail {
+  font-size: 0.875rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.selectedPlayers {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.playerList {
+  margin: 0.5rem 0 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.playerListItem {
+  padding: 0.25rem 0;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .demo {
+    margin: 0;
+    border-radius: 0;
+  }
+  
+  .header,
+  .content {
+    padding: 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .select {
+    min-width: auto;
+  }
+  
+  .gameInfo {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+  
+  .playerGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .missionGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .playerHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header,
+  .content {
+    padding: 1rem;
+  }
+  
+  .section {
+    margin-bottom: 2rem;
+  }
+  
+  .playerCard,
+  .missionCard,
+  .playerDetails {
+    padding: 1rem;
+  }
+}
