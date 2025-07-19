@@ -84,39 +84,8 @@ function GameClient({ roomCode }: GameClientProps) {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#252547]">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent mb-4">
-              Game in Progress
-            </h1>
-            <div className="text-lg text-slate-100 opacity-90">
-              Room Code: <span className="font-mono text-2xl">{roomCode}</span>
-            </div>
-          </div>
-
-          {/* Placeholder for game content */}
-          <div className="bg-[#252547]/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl p-8 text-center">
-            <div className="text-2xl font-bold text-white mb-4">
-              Game Interface Coming Soon
-            </div>
-            <div className="text-slate-300 mb-6">
-              The game interface is under development. For now, you can return to the lobby.
-            </div>
-            <button
-              onClick={() => router.push(`/room/${roomCode}/lobby`)}
-              className="bg-[#3d3d7a] hover:bg-[#4a4a96] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300"
-            >
-              Return to Lobby
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // Render nothing, this file should not be used. All game flow is handled by dynamic game engine UI.
+  return null;
 }
 
 export { GameClient };
