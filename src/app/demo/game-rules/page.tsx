@@ -5,7 +5,7 @@
  * modal interface, search functionality, and contextual help.
  */
 
-import GameRulesDemo from '~/components/features/game-rules/GameRulesDemo';
+import { GameRulesDemo } from '~/components/features/game-rules/GameRulesDemo';
 
 export default function GameRulesDemoPage() {
   return <GameRulesDemo />;

@@ -3,9 +3,8 @@
  */
 
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../src/server/api/root';
 
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000/api/trpc',

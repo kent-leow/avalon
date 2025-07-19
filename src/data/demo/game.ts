@@ -6,7 +6,10 @@ import { validateDemoGameState, ensureDemoEnvironment } from './validation';
  * All data is marked with _brand: 'demo' and validated
  */
 
-ensureDemoEnvironment();
+// Only enforce demo environment check at runtime, not during build
+if (typeof window !== 'undefined') {
+  ensureDemoEnvironment();
+}
 
 /**
  * Standard 5-player game in lobby phase

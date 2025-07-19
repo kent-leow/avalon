@@ -6,7 +6,10 @@ import { validateDemoAccessibilityState, ensureDemoEnvironment } from './validat
  * All data is marked with _brand: 'demo' and validated
  */
 
-ensureDemoEnvironment();
+// Only enforce demo environment check at runtime, not during build
+if (typeof window !== 'undefined') {
+  ensureDemoEnvironment();
+}
 
 /**
  * Default accessibility state - all features disabled

@@ -4,6 +4,8 @@
  * Comprehensive demonstration of all accessibility features and components
  */
 
+"use client";
+
 import React from 'react';
 import { AccessibilityProvider } from '~/context/AccessibilityContext';
 import { 

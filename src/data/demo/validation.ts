@@ -117,7 +117,7 @@ export function isDemoEnvironment(): boolean {
   if (typeof window !== 'undefined') {
     return window.location.hostname === 'localhost' || window.location.hostname.includes('demo');
   }
-  return process.env.NODE_ENV === 'development' || process.env.DEMO_MODE === 'true';
+  return process.env.NODE_ENV === 'development' || process.env.DEMO_MODE === 'true' || process.env.BUILD_DEMO === 'true';
 }
 
 /**

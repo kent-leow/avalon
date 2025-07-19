@@ -1,7 +1,6 @@
 {
     "chat.agent.maxRequests": 2500,
     "github.copilot.chat.agent.terminal.allowList": {
-        "\"/.*/\"": true,
         "/.*/": true
     }
 }

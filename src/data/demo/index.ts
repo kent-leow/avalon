@@ -28,7 +28,10 @@ import {
  * Provides easy access to all demo scenarios, game states, mobile states, and accessibility states
  */
 
-ensureDemoEnvironment();
+// Only enforce demo environment check at runtime, not during build
+if (typeof window !== 'undefined') {
+  ensureDemoEnvironment();
+}
 
 /**
  * Demo scenarios combining game states with descriptive metadata

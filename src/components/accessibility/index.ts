@@ -9,7 +9,6 @@ export { default as ScreenReaderSupport } from './ScreenReaderSupport';
 export { default as KeyboardNavigation } from './KeyboardNavigation';
 export { default as HighContrastMode } from './HighContrastMode';
 export { default as AlternativeInputs } from './AlternativeInputs';
-export { default as AccessibilitySettings } from './AccessibilitySettings';
 
 // Re-export types for convenience
 export type {
